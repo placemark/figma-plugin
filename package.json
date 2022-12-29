@@ -1,7 +1,7 @@
 {
-  "name": "Placemark",
+  "name": "osm-figma",
   "version": "1.0.0",
-  "description": "Your Figma Plugin",
+  "description": "Vector maps from OpenStreetMap in Figma",
   "main": "code.js",
   "scripts": {
     "build": "esbuild code.ts --bundle --outfile=code.js",
@@ -16,14 +16,5 @@
     "typescript": "*"
   },
   "dependencies": {
-    "d3": "^7.8.0",
-    "d3-dispatch": "^3.0.1",
-    "d3-selection": "^3.0.0",
-    "d3-zoom": "^3.0.0",
-    "iD": "https://github.com/openstreetmap/iD/archive/refs/tags/v2.23.2.tar.gz",
-    "lodash": "^4.17.21",
-    "name-suggestion-index": "^6.0.20221227",
-    "osm-community-index": "^5.4.0",
-    "vparse": "^1.1.0"
   }
 }
