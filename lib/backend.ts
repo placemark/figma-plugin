@@ -3,35 +3,33 @@ import { getLerp, proj } from "./projection";
 import { request } from "./request";
 import { applyStyle, STYLES } from "./styles";
 import { BBOX, GROUP_ORDER } from "./types";
+import { progress } from "./progress";
 
-const frame = figma.currentPage.selection[0];
-
-if (!frame) {
-  figma.notify("Create and select an empty frame to place a map.");
-} else {
-  const aspect = frame.width / frame.height;
-  const dim = 720;
-
-  figma.showUI(__html__, {
-    width: Math.round(dim),
-    height: Math.round(dim / aspect) + 80,
-  });
-
-  if (frame?.type !== "FRAME") {
-    figma.ui.postMessage({
-      type: "message",
-      message: "Draw and select a frame to place a map.",
-    });
-  } else {
-    figma.ui.postMessage({
-      type: "ratio",
-      width: frame.width,
-      height: frame.height,
-    });
+let frame = (() => {
+  let sel = figma.currentPage.selection[0];
+  if (sel?.type === "FRAME") {
+    return sel;
   }
-}
 
-clear();
+  let frame = figma.createFrame();
+  frame.resize(720, 360);
+  figma.viewport.scrollAndZoomIntoView([frame]);
+  return frame;
+})();
+
+const aspect = frame.width / frame.height;
+const dim = 720;
+
+figma.showUI(__html__, {
+  width: Math.round(dim),
+  height: Math.round(dim / aspect) + 80,
+});
+
+figma.ui.postMessage({
+  type: "ratio",
+  width: frame.width,
+  height: frame.height,
+});
 
 figma.ui.onmessage = (msg) => {
   switch (msg.type) {
@@ -42,10 +40,7 @@ figma.ui.onmessage = (msg) => {
     case "render-map": {
       render(msg.bbox.split(",").map((b: string) => parseFloat(b))).catch(
         (e) => {
-          figma.ui.postMessage({
-            type: "message",
-            message: e.message,
-          });
+          progress(e.message, { error: true });
         }
       );
     }
@@ -53,36 +48,19 @@ figma.ui.onmessage = (msg) => {
 };
 
 async function render(bbox: BBOX) {
-  if (frame?.type !== "FRAME") {
-    figma.ui.postMessage({
-      type: "message",
-      message: "Draw and select a frame to place a map.",
-    });
-    return;
-  }
-
   let { width, height, x, y } = frame;
   const scaleFactor = width / (bbox[2] - bbox[0]);
   const lerp = getLerp(bbox, [width, height], [x, y]);
 
-  figma.ui.postMessage({
-    type: "message",
-    message: "Requesting data",
-  });
+  progress("Requesting data");
 
   const j = await request(bbox);
-  figma.ui.postMessage({
-    type: "message",
-    message: "Building network",
-  });
+  progress("Building network");
 
   const { grouped, lines } = buildNetwork(j);
-  figma.ui.postMessage({ type: "message", message: "Creating frame" });
+  progress("Creating frame");
 
-  figma.ui.postMessage({
-    type: "message",
-    message: `Drawing (${lines.length} elements)`,
-  });
+  progress(`Drawing (${lines.length} elements)`);
 
   let drawn = 0;
 
@@ -98,10 +76,7 @@ async function render(bbox: BBOX) {
 
     for (const line of lines) {
       drawn++;
-      figma.ui.postMessage({
-        type: "message",
-        message: `Drawing (${drawn} / ${lines.length} elements)`,
-      });
+      progress(`Drawing (${drawn} / ${lines.length} elements)`);
       const vec = figma.createVector();
       applyStyle(vec, style, scaleFactor);
 
@@ -132,17 +107,11 @@ async function render(bbox: BBOX) {
     figmaGroup.name = group;
   }
 
-  figma.ui.postMessage({
-    type: "message",
-    message: `Writing attribution`,
-  });
+  progress(`Writing attribution`);
 
   await createAttribution(frame);
 
-  figma.ui.postMessage({
-    type: "message",
-    message: `Done!`,
-  });
+  progress(`Done!`);
 }
 
 async function createAttribution(frame: FrameNode) {
