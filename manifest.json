@@ -2,7 +2,7 @@
   "name": "OSM for Figma by Placemark",
   "id": "1189962635826293304",
   "api": "1.0.0",
-  "main": "dist/code.js",
+  "main": "dist/backend.js",
   "editorType": [
     "figma"
   ],

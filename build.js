@@ -48,10 +48,10 @@ esbuild
 
 esbuild
   .build({
-    entryPoints: ["lib/code.ts"],
+    entryPoints: ["lib/backend.ts"],
     bundle: true,
     watch: true,
-    outfile: "dist/code.js",
+    outfile: "dist/backend.js",
     logLevel: "info",
     watch: {
       onRebuild(error, result) {

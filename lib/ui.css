@@ -29,11 +29,9 @@ body {
   background: var(--figma-color-bg, #fff);
   color: var(--figma-color-text, #222);
   padding: 5px;
-  border-radius: 2px;
-  border-width: 1px;
+  border: 1px solid var(--figma-color-border, #777);
+  border-radius: 4px;
   font-size: 14px;
-  border-color: var(--figma-color-border, #777);
-  z-index: 999;
 }
 
 #messages {
@@ -45,9 +43,6 @@ body {
 
 .error {
   color: var(--figma-color-text-danger, red);
-}
-
-.progress {
 }
 
 #controls {

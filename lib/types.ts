@@ -2,6 +2,8 @@ export type Message = {
   type: "progress";
 };
 
+export type Pos2 = [number, number];
+
 export type BBOX = [number, number, number, number];
 
 export interface Bounds {
