@@ -4,17 +4,25 @@
   "description": "Vector maps from OpenStreetMap in Figma",
   "main": "code.js",
   "scripts": {
-    "build": "esbuild code.ts --bundle --outfile=code.js",
-    "watch": "npm run build -- --watch"
+    "build": "esbuild code.ts --bundle --outfile=dist/code.js",
+    "build:ui": "esbuild ui.ts --bundle --outfile=dist/ui.js",
+    "watch": "concurrently \"npm run build -- --watch\" \"npm run build:ui -- --watch\"",
+    "html": "inline-source --compress false --root ./ < ui-template.html > ui.html"
   },
   "author": "",
   "license": "",
   "devDependencies": {
     "@figma/plugin-typings": "*",
+    "concurrently": "^7.6.0",
     "esbuild": "^0.16.12",
+    "html-inline": "^1.2.0",
+    "inline-source": "^8.0.2",
+    "inline-source-cli": "^2.0.0",
     "prettier": "^2.8.1",
     "typescript": "*"
   },
   "dependencies": {
+    "leaflet": "^1.9.3",
+    "leaflet-control-geocoder": "^2.4.0"
   }
 }

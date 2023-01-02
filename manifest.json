@@ -1,10 +1,10 @@
 {
-  "name": "Placemark",
+  "name": "OSM for Figma by Placemark",
   "id": "1189962635826293304",
   "api": "1.0.0",
-  "main": "code.js",
+  "main": "dist/code.js",
   "editorType": [
     "figma"
   ],
-  "ui": "ui.html"
+  "ui": "dist/ui.html"
 }
