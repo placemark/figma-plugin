@@ -11,6 +11,9 @@ but much simpler.
 
 The `build` script will continuously build and update this plugin.
 
+You can use this plugin locally by going
+to Plugins → Development → Import plugin from manifest…
+
 ## Usage
 
 Create an empty frame in Figma. With it selected, start the Placemark plugin.
