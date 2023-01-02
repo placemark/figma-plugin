@@ -10,16 +10,17 @@ export async function request(bbox: [number, number, number, number]) {
       headersObject: {
         Accept: "application/json",
       },
-    }
+    } as unknown as RequestInit
   );
 
   figma.ui.postMessage({ type: "progress", message: "Parsing response" });
 
   if (res.status >= 400) {
-    if (res.headersObject.error) {
-      throw new Error(res.headersObject.error);
+    const error = (res as any).headersObject.error;
+    if (error) {
+      throw new Error(error);
     }
-    throw new Error("Bad response from server");
+    throw new Error("Bad response from server (probably too zoomed-out)");
   }
 
   /**

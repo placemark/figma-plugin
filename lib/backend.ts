@@ -19,7 +19,7 @@ if (!frame) {
 
   if (frame?.type !== "FRAME") {
     figma.ui.postMessage({
-      type: "fatal-error",
+      type: "message",
       message: "Draw and select a frame to place a map.",
     });
   } else {
@@ -43,7 +43,7 @@ figma.ui.onmessage = (msg) => {
       render(msg.bbox.split(",").map((b: string) => parseFloat(b))).catch(
         (e) => {
           figma.ui.postMessage({
-            type: "error",
+            type: "message",
             message: e.message,
           });
         }
@@ -55,7 +55,7 @@ figma.ui.onmessage = (msg) => {
 async function render(bbox: BBOX) {
   if (frame?.type !== "FRAME") {
     figma.ui.postMessage({
-      type: "error",
+      type: "message",
       message: "Draw and select a frame to place a map.",
     });
     return;
@@ -66,21 +66,21 @@ async function render(bbox: BBOX) {
   const lerp = getLerp(bbox, [width, height], [x, y]);
 
   figma.ui.postMessage({
-    type: "progress",
+    type: "message",
     message: "Requesting data",
   });
 
   const j = await request(bbox);
   figma.ui.postMessage({
-    type: "progress",
+    type: "message",
     message: "Building network",
   });
 
   const { grouped, lines } = buildNetwork(j);
-  figma.ui.postMessage({ type: "progress", message: "Creating frame" });
+  figma.ui.postMessage({ type: "message", message: "Creating frame" });
 
   figma.ui.postMessage({
-    type: "progress",
+    type: "message",
     message: `Drawing (${lines.length} elements)`,
   });
 
@@ -99,7 +99,7 @@ async function render(bbox: BBOX) {
     for (const line of lines) {
       drawn++;
       figma.ui.postMessage({
-        type: "progress",
+        type: "message",
         message: `Drawing (${drawn} / ${lines.length} elements)`,
       });
       const vec = figma.createVector();
@@ -133,14 +133,14 @@ async function render(bbox: BBOX) {
   }
 
   figma.ui.postMessage({
-    type: "progress",
+    type: "message",
     message: `Writing attribution`,
   });
 
   await createAttribution(frame);
 
   figma.ui.postMessage({
-    type: "progress",
+    type: "message",
     message: `Done!`,
   });
 }

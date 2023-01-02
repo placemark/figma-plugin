@@ -57,11 +57,25 @@ export const STYLES: Record<GROUPS, () => Style> = {
       strokeWeight: 0,
     };
   }),
-  [GROUPS.Water]: once(() => {
-    const fillStyle = createColorPaint("Water fill", [0.7, 0.7, 0.9]);
+  [GROUPS.WaterLine]: once(() => {
+    const fillStyle = createColorPaint("Water line stroke", [0.7, 0.7, 0.9]);
+    return {
+      strokeStyleId: fillStyle.id,
+      strokeWeight: 2,
+    };
+  }),
+  [GROUPS.WaterArea]: once(() => {
+    const fillStyle = createColorPaint("Water area stroke", [0.7, 0.7, 0.9]);
     return {
       fillStyleId: fillStyle.id,
       strokeWeight: 0,
+    };
+  }),
+  [GROUPS.Water]: once(() => {
+    const fillStyle = createColorPaint("Water area stroke", [0.7, 0.7, 0.9]);
+    return {
+      strokeStyleId: fillStyle.id,
+      strokeWeight: 4,
     };
   }),
   [GROUPS.TrafficRoadMajor]: once(() => {

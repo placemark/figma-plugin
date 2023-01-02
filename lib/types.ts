@@ -28,6 +28,11 @@ export interface Element {
   uid: number;
   tags: Tags;
   nodes?: Id[];
+  members?: {
+    type: "way" | "node";
+    role: string;
+    ref: Id;
+  }[];
 }
 
 export interface RootObject {
@@ -53,12 +58,16 @@ export enum GROUPS {
   TrafficRoadMajor = "Traffic road major",
   Path = "Path",
   Water = "Water",
+  WaterLine = "Water lines",
+  WaterArea = "Water area",
   Building = "Building",
 }
 
 export const GROUP_ORDER = [
   GROUPS.Park,
   GROUPS.Water,
+  GROUPS.WaterArea,
+  GROUPS.WaterLine,
   GROUPS.Building,
   GROUPS.Rail,
   GROUPS.ServiceRoad,

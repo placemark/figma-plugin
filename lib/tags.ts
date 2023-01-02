@@ -63,9 +63,12 @@ export function isBuilding(tags: Tags) {
   );
 }
 
+export function isWaterLine(tags: Tags) {
+  return !!tags.waterway;
+}
+
 export function isWater(tags: Tags) {
   return (
-    !!tags.waterway ||
     tags.natural === "water" ||
     tags.natural === "coastline" ||
     tags.natural === "bay" ||
@@ -93,7 +96,11 @@ export function isServiceRoad(tags: Tags) {
 }
 
 export function isPark(tags: Tags) {
-  return leisure.has(tags.leisure) || landuse.has(tags.landuse);
+  return (
+    leisure.has(tags.leisure) ||
+    landuse.has(tags.landuse) ||
+    tags.natural === "wood"
+  );
 }
 
 export function isRail(tags: Tags) {
@@ -108,14 +115,15 @@ export function isRail(tags: Tags) {
   );
 }
 
-export function getGroup(tags: Tags): GROUPS | null {
+export function getGroup(tags: Tags, haveRelation?: boolean): GROUPS | null {
   return (
     (isRail(tags) && GROUPS.Rail) ||
     (isServiceRoad(tags) && GROUPS.ServiceRoad) ||
     (isTrafficRoad(tags) && GROUPS.TrafficRoad) ||
     (isTrafficRoadMajor(tags) && GROUPS.TrafficRoadMajor) ||
     (isPath(tags) && GROUPS.Path) ||
-    (isWater(tags) && GROUPS.Water) ||
+    (isWaterLine(tags) && GROUPS.WaterLine) ||
+    (isWater(tags) && (haveRelation ? GROUPS.WaterArea : GROUPS.Water)) ||
     (isBuilding(tags) && GROUPS.Building) ||
     (isPark(tags) && GROUPS.Park) ||
     null
