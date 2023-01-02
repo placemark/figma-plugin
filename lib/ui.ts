@@ -13,23 +13,11 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 L.Control.geocoder().addTo(leafletMap).setPosition("topleft");
 
-const message = document.getElementById("message")!;
-
 addEventListener("message", (evt) => {
   switch (evt.data?.pluginMessage?.type) {
     case "ratio": {
       const { width, height } = evt.data?.pluginMessage || {};
       setRatio(width, height);
-      break;
-    }
-    case "message": {
-      message.innerHTML = evt.data?.pluginMessage?.message;
-      message.className = evt.data?.pluginMessage?.className || "";
-      break;
-    }
-    case "fatal-error": {
-      message.innerHTML = evt.data?.pluginMessage?.message;
-      message.className = "";
       break;
     }
   }

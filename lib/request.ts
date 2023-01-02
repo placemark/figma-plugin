@@ -1,4 +1,5 @@
 import { RootObject } from "./types";
+import { progress } from "./progress";
 
 export async function request(bbox: [number, number, number, number]) {
   const res = await fetch(
@@ -13,7 +14,7 @@ export async function request(bbox: [number, number, number, number]) {
     } as unknown as RequestInit
   );
 
-  figma.ui.postMessage({ type: "progress", message: "Parsing response" });
+  progress("Getting text");
 
   if (res.status >= 400) {
     const error = (res as any).headersObject.error;
@@ -27,6 +28,8 @@ export async function request(bbox: [number, number, number, number]) {
    * Figma doesn't have req.json()
    */
   const text = await res.text();
+
+  progress("Parsing JSON");
 
   return JSON.parse(text) as RootObject;
 }
