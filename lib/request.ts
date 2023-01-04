@@ -3,7 +3,7 @@ import { progress } from "./progress";
 
 export async function request(bbox: [number, number, number, number]) {
   const res = await fetch(
-    `https://api.openstreetmap.org/api/0.6/map?bbox=${bbox.join(",")}`,
+    `https://overpass-api.de/api/interpreter?data=%5Bout%3Ajson%5D%5Btimeout%3A30%5D%3B%28node%28${bbox[1]}%2C${bbox[0]}%2C${bbox[3]}%2C${bbox[2]}%29%3B%3C%3Bnode%28w%29%3B%29%3Bout%3B`
     {
       /**
        * Figma doesn't support Headers()
