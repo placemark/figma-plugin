@@ -119,6 +119,7 @@ async function createAttribution(frame: FrameNode) {
   frame.appendChild(attribution);
   await figma.loadFontAsync(attribution.fontName as FontName);
   attribution.characters = "OpenStreetMap";
+  attribution.fontSize = Math.max(frame.height / 30, 12);
   attribution.x = 5;
   attribution.y = 5;
 }
