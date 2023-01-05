@@ -4,7 +4,8 @@
   "description": "Vector maps from OpenStreetMap in Figma",
   "main": "code.js",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "vitest run"
   },
   "author": "Tom MacWright",
   "license": "ISC",
