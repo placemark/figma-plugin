@@ -12,7 +12,8 @@
     "@figma/plugin-typings": "*",
     "esbuild": "^0.16.12",
     "prettier": "^2.8.1",
-    "typescript": "*"
+    "typescript": "*",
+    "vitest": "^0.26.3"
   },
   "dependencies": {
     "leaflet": "^1.9.3",
