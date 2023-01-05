@@ -11,7 +11,15 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(leafletMap);
 
-L.Control.geocoder().addTo(leafletMap).setPosition("topleft");
+L.Control.geocoder({
+  defaultMarkGeocode: false,
+})
+  .on("markgeocode", function (e: any) {
+    var bbox = e.geocode.bbox;
+    leafletMap.fitBounds(bbox);
+  })
+  .addTo(leafletMap)
+  .setPosition("topleft");
 
 addEventListener("message", (evt) => {
   switch (evt.data?.pluginMessage?.type) {
