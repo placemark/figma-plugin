@@ -4,7 +4,8 @@
   "description": "Vector maps from OpenStreetMap in Figma",
   "main": "code.js",
   "scripts": {
-    "build": "node build.js"
+    "build": "node build.js",
+    "test": "vitest run"
   },
   "author": "Tom MacWright",
   "license": "ISC",
@@ -12,7 +13,8 @@
     "@figma/plugin-typings": "*",
     "esbuild": "^0.16.12",
     "prettier": "^2.8.1",
-    "typescript": "*"
+    "typescript": "*",
+    "vitest": "^0.26.3"
   },
   "dependencies": {
     "leaflet": "^1.9.3",
