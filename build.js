@@ -18,6 +18,9 @@ esbuild
     bundle: true,
     watch: true,
     outfile: "dist/ui.css",
+    loader: {
+      ".png": "dataurl",
+    },
     logLevel: "info",
     watch: {
       onRebuild(error, result) {
