@@ -2,8 +2,13 @@ import { RootObject } from "./types";
 import { progress } from "./progress";
 
 export async function request(bbox: [number, number, number, number]) {
+  // Overpass appears to use lat/lon bbox order
+  const bboxString = [bbox[1], bbox[0], bbox[3], bbox[2]].join(",");
+
+  const query = `[out:json][timeout:30];(node(${bboxString});<;node(w););out;`;
+
   const res = await fetch(
-    `https://api.openstreetmap.org/api/0.6/map?bbox=${bbox.join(",")}`,
+    `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
     {
       /**
        * Figma doesn't support Headers()
