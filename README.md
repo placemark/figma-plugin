@@ -1,6 +1,8 @@
 # figma-plugin
 
-![Figma plugin preview](./splash.png)
+[![Try it out in Figma](./.media/try-it-out.png)](https://www.figma.com/community/plugin/1189962635826293304/Placemark)
+
+![Figma plugin preview](./.media/splash.png)
 
 Make maps in [Figma](https://www.figma.com/) using [OpenStreetMap](https://www.openstreetmap.org/)
 data. This plugin directly transforms live OpenStreetMap into a vector map in Figma.
