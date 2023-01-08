@@ -1,6 +1,6 @@
 # figma-plugin
 
-[![Try it out in Figma](./.media/try-it-out.png)](https://www.figma.com/community/plugin/1189962635826293304/Placemark)
+<a href='https://www.figma.com/community/plugin/1189962635826293304/Placemark'><img src='./.media/try-it-out.png' alt='Try it out in figma'></a>
 
 ![Figma plugin preview](./.media/splash.png)
 
