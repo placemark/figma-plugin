@@ -31,6 +31,6 @@ export function getLerp(bbox: BBOX, [width, height]: Pos2, [dx, dy]: Pos2) {
     return [
       (width * (lon - sw[0])) / (ne[0] - sw[0]) + dx,
       height - (height * (lat - sw[1])) / (ne[1] - sw[1]) + dy,
-    ].join(" ");
+    ];
   };
 }

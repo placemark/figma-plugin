@@ -1,61 +1,94 @@
-import { Element, GROUPS, Line, RootObject } from "./types";
-import { getGroup } from "./tags";
+import { Circle, Element, GROUPS, MultiLine, Mark, RootObject } from "./types";
+import { getNodeGroup, getWayGroup } from "./tags";
 
 export function buildNetwork(j: RootObject) {
-  const nodes = new Map<number, Element>();
-  const ways = new Map<number, Element>();
-  const lines: Line[] = [];
+  const nodeIndex = new Map<number, Element>();
+  const wayIndex = new Map<number, Element>();
+  const circles: Circle[] = [];
 
   for (let element of j.elements) {
     if (element.type === "node") {
-      nodes.set(element.id, element);
+      nodeIndex.set(element.id, element);
     } else if (element.type === "way") {
-      ways.set(element.id, element);
+      wayIndex.set(element.id, element);
     }
   }
 
-  const grouped: Map<GROUPS, Line[]> = new Map();
+  const grouped: Map<GROUPS, Mark[]> = new Map();
 
   for (let element of j.elements) {
-    if (element.type === "way") {
-      const line: Line = {
-        way: element,
-        nodes:
-          element.nodes?.map((id) => {
-            return nodes.get(id)!;
-          }) || [],
-      };
-      lines.push(line);
-      const group = element.tags && getGroup(element.tags, true);
+    switch (element.type) {
+      case "way": {
+        const elementNodes = element.nodes;
+        const line: MultiLine = {
+          type: "line",
+          way: element,
+          nodes: elementNodes
+            ? [
+                elementNodes.map((id) => {
+                  return nodeIndex.get(id)!;
+                }),
+              ]
+            : [],
+        };
+        const group = element.tags && getWayGroup(element.tags, true);
 
-      if (group) {
-        const lines: Line[] = grouped.get(group) || [];
-        lines.push(line);
-        grouped.set(group, lines);
-      } else {
-        // console.log(element.tags);
-      }
-    } else if (element.type === "relation") {
-      let group = getGroup(element.tags, true);
-      if (element.tags?.type === "multipolygon" && group) {
-        const ref = element.members?.[0].ref;
-        const outer = ref && ways.get(ref);
-        if (outer) {
-          const line: Line = {
-            way: outer,
-            nodes:
-              outer.nodes?.map((id) => {
-                return nodes.get(id)!;
-              }) || [],
-          };
-
-          const lines: Line[] = grouped.get(group) || [];
-          lines.push(line);
-          grouped.set(group, lines);
+        if (group) {
+          const marks: Mark[] = grouped.get(group) || [];
+          marks.push(line);
+          grouped.set(group, marks);
+        } else {
+          // console.log(element.tags);
         }
+        break;
+      }
+      case "node": {
+        let group = element.tags && getNodeGroup(element.tags);
+        if (group) {
+          const marks: Mark[] = grouped.get(group) || [];
+          const circle: Circle = {
+            type: "circle",
+            node: element,
+          };
+          marks.push(circle);
+          grouped.set(group, marks);
+        }
+        break;
+      }
+      case "relation": {
+        let group = getWayGroup(element.tags, true);
+        if (element.tags?.type === "multipolygon" && group) {
+          const { members } = element;
+          if (!members) continue;
+          const ways = members
+            .sort((m) => (m.role === "outer" ? -1 : 1))
+            .map((m) => {
+              return wayIndex.get(m.ref);
+            })
+            .filter(Boolean) as Element[];
+          if (ways.length) {
+            const line: MultiLine = {
+              type: "line",
+              way: ways[0]!,
+              nodes:
+                ways.map((way) => {
+                  return (
+                    way.nodes?.map((id) => {
+                      return nodeIndex.get(id)!;
+                    }) || []
+                  );
+                }) || [],
+            };
+
+            const marks: Mark[] = grouped.get(group) || [];
+            marks.push(line);
+            grouped.set(group, marks);
+          }
+        }
+        break;
       }
     }
   }
 
-  return { lines, grouped };
+  return { circles, grouped };
 }

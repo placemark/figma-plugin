@@ -27,7 +27,6 @@ const traffic_roads = new Set([
 
 const landuse = new Set([
   "flowerbed",
-  "forest",
   "grass",
   "recreation_ground",
   "village_green",
@@ -75,7 +74,8 @@ export function isWater(tags: Tags) {
     tags.landuse === "pond" ||
     tags.landuse === "basin" ||
     tags.landuse === "reservoir" ||
-    tags.landuse === "salt_pond"
+    tags.landuse === "salt_pond" ||
+    tags.leisure === "swimming_pool"
   );
 }
 
@@ -96,11 +96,7 @@ export function isServiceRoad(tags: Tags) {
 }
 
 export function isPark(tags: Tags) {
-  return (
-    leisure.has(tags.leisure) ||
-    landuse.has(tags.landuse) ||
-    tags.natural === "wood"
-  );
+  return leisure.has(tags.leisure) || landuse.has(tags.landuse);
 }
 
 export function isRail(tags: Tags) {
@@ -115,7 +111,25 @@ export function isRail(tags: Tags) {
   );
 }
 
-export function getGroup(tags: Tags, haveRelation?: boolean): GROUPS | null {
+/**
+ * https://wiki.openstreetmap.org/wiki/Tag:natural%3Dtree
+ */
+export function isTree(tags: Tags) {
+  return tags.natural === "tree";
+}
+
+/**
+ * https://www.openstreetmap.org/way/1109695968
+ */
+export function isWood(tags: Tags) {
+  return tags.natural === "wood" || tags.landuse === "forest";
+}
+
+export function getNodeGroup(tags: Tags): GROUPS | null {
+  return (isTree(tags) && GROUPS.Tree) || null;
+}
+
+export function getWayGroup(tags: Tags, haveRelation?: boolean): GROUPS | null {
   return (
     (isRail(tags) && GROUPS.Rail) ||
     (isServiceRoad(tags) && GROUPS.ServiceRoad) ||
@@ -126,6 +140,7 @@ export function getGroup(tags: Tags, haveRelation?: boolean): GROUPS | null {
     (isWater(tags) && (haveRelation ? GROUPS.WaterArea : GROUPS.Water)) ||
     (isBuilding(tags) && GROUPS.Building) ||
     (isPark(tags) && GROUPS.Park) ||
+    (isWood(tags) && GROUPS.Wood) ||
     null
   );
 }
