@@ -5,6 +5,7 @@ interface Style {
   strokeStyleId?: string;
   strokeWeight?: number;
   dashPattern?: number[];
+  radius?: number;
 }
 
 function once(fn: () => Style) {
@@ -15,6 +16,13 @@ function once(fn: () => Style) {
     }
     return res;
   };
+}
+
+function createColorPaint255(
+  name: string,
+  [r, g, b]: [number, number, number]
+) {
+  return createColorPaint(name, [r / 255, g / 255, b / 255]);
 }
 
 function createColorPaint(name: string, [r, g, b]: [number, number, number]) {
@@ -46,12 +54,23 @@ export const STYLES: Record<GROUPS, () => Style> = {
       strokeWeight: 0.5,
     };
   }),
+  [GROUPS.Tree]: once(() => {
+    const fillStyle = createColorPaint255("Tree fill", [157, 219, 150]);
+    return {
+      fillStyleId: fillStyle.id,
+      radius: 2,
+      strokeWeight: 0,
+    };
+  }),
+  [GROUPS.Wood]: once(() => {
+    const fillStyle = createColorPaint255("Wood fill", [174, 209, 159]);
+    return {
+      fillStyleId: fillStyle.id,
+      strokeWeight: 0,
+    };
+  }),
   [GROUPS.Park]: once(() => {
-    const fillStyle = createColorPaint("Park fill", [
-      0.82745098,
-      234 / 255,
-      181 / 255,
-    ]);
+    const fillStyle = createColorPaint255("Park fill", [190, 253, 200]);
     return {
       fillStyleId: fillStyle.id,
       strokeWeight: 0,
@@ -79,11 +98,10 @@ export const STYLES: Record<GROUPS, () => Style> = {
     };
   }),
   [GROUPS.TrafficRoadMajor]: once(() => {
-    const strokeStyle = createColorPaint("Traffic road major", [
-      200 / 255,
-      190 / 255,
-      130 / 255,
-    ]);
+    const strokeStyle = createColorPaint255(
+      "Traffic road major",
+      [200, 190, 130]
+    );
     return {
       strokeStyleId: strokeStyle.id,
       strokeWeight: 4,
@@ -120,7 +138,11 @@ export const STYLES: Record<GROUPS, () => Style> = {
   }),
 };
 
-export function applyStyle(vec: VectorNode, style: Style, scaleFactor: number) {
+export function applyStyle(
+  vec: VectorNode | EllipseNode,
+  style: Style,
+  scaleFactor: number
+) {
   if (style.fillStyleId) {
     vec.fillStyleId = style.fillStyleId;
   }
@@ -140,5 +162,10 @@ export function applyStyle(vec: VectorNode, style: Style, scaleFactor: number) {
         Math.round(style.strokeWeight * (scaleFactor * 0.00002))
       );
     }
+  }
+
+  if (vec.type === "ELLIPSE" && style.radius) {
+    const dim = style.radius * (scaleFactor * 0.00002);
+    vec.resize(dim, dim);
   }
 }

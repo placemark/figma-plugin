@@ -57,49 +57,73 @@ async function render(bbox: BBOX) {
   const j = await request(bbox);
   progress("Building network");
 
-  const { grouped, lines } = buildNetwork(j);
+  const { grouped } = buildNetwork(j);
   progress("Creating frame");
-
-  progress(`Drawing (${lines.length} elements)`);
 
   let drawn = 0;
 
   clear();
 
   for (const group of GROUP_ORDER) {
-    const lines = grouped.get(group);
-    if (!lines) continue;
+    const marks = grouped.get(group);
+    if (!marks) continue;
 
     const vecs = [];
 
     const style = STYLES[group]();
 
-    for (const line of lines) {
+    for (const mark of marks) {
       drawn++;
-      progress(`Drawing (${drawn} / ${lines.length} elements)`);
-      const vec = figma.createVector();
-      applyStyle(vec, style, scaleFactor);
+      progress(`Drawing (${drawn} / ${marks.length} elements)`);
 
-      if (line.way.tags?.name) {
-        vec.name = line.way.tags?.name;
+      switch (mark.type) {
+        case "line": {
+          const vec = figma.createVector();
+          applyStyle(vec, style, scaleFactor);
+
+          if (mark.way.tags?.name) {
+            vec.name = mark.way.tags?.name;
+          }
+
+          const data = mark.nodes.map((way) => {
+            return way
+              .map(
+                (node, i) =>
+                  `${i === 0 ? "M" : "L"} ${lerp(
+                    proj([node.lon, node.lat])
+                  ).join(" ")}`
+              )
+              .join(" ");
+          });
+
+          vec.vectorPaths = data.map((data) => {
+            return {
+              windingRule: "EVENODD",
+              data,
+            };
+          });
+
+          figma.currentPage.appendChild(vec);
+          vecs.push(vec);
+          break;
+        }
+        case "circle": {
+          const c = figma.createEllipse();
+          applyStyle(c, style, scaleFactor);
+
+          if (mark.node.tags?.name) {
+            c.name = mark.node.tags?.name;
+          }
+
+          const [x, y] = lerp(proj([mark.node.lon, mark.node.lat]));
+          c.x = x;
+          c.y = y;
+
+          figma.currentPage.appendChild(c);
+          vecs.push(c);
+          break;
+        }
       }
-
-      const data = line.nodes
-        .map(
-          (node, i) =>
-            `${i === 0 ? "M" : "L"} ${lerp(proj([node.lon, node.lat]))}`
-        )
-        .join(" ");
-
-      vec.vectorPaths = [
-        {
-          windingRule: "EVENODD",
-          data,
-        },
-      ];
-
-      figma.currentPage.appendChild(vec);
-      vecs.push(vec);
     }
 
     const figmaGroup = figma.group(vecs, frame);

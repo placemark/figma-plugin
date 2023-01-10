@@ -45,13 +45,22 @@ export interface RootObject {
   elements: Element[];
 }
 
-export interface Line {
+export interface MultiLine {
+  type: "line";
   way: Element;
-  nodes: Element[];
+  nodes: Element[][];
 }
+
+export interface Circle {
+  type: "circle";
+  node: Element;
+}
+
+export type Mark = MultiLine | Circle;
 
 export enum GROUPS {
   Park = "Park",
+  Wood = "Wood",
   Rail = "Rail",
   ServiceRoad = "Service road",
   TrafficRoad = "Traffic road",
@@ -61,10 +70,12 @@ export enum GROUPS {
   WaterLine = "Water lines",
   WaterArea = "Water area",
   Building = "Building",
+  Tree = "Tree",
 }
 
 export const GROUP_ORDER = [
   GROUPS.Park,
+  GROUPS.Wood,
   GROUPS.Water,
   GROUPS.WaterArea,
   GROUPS.WaterLine,
@@ -74,4 +85,5 @@ export const GROUP_ORDER = [
   GROUPS.TrafficRoad,
   GROUPS.TrafficRoadMajor,
   GROUPS.Path,
+  GROUPS.Tree,
 ];

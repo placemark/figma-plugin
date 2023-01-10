@@ -1,9 +1,9 @@
 import { test, expect } from "vitest";
 import { GROUPS } from "./types";
-import { getGroup } from "./tags";
+import { getWayGroup } from "./tags";
 
 test("getGroup", () => {
-  expect(getGroup({})).toEqual(null);
-  expect(getGroup({ highway: "secondary" })).toEqual(GROUPS.TrafficRoad);
-  expect(getGroup({ leisure: "park" })).toEqual(GROUPS.Park);
+  expect(getWayGroup({})).toEqual(null);
+  expect(getWayGroup({ highway: "secondary" })).toEqual(GROUPS.TrafficRoad);
+  expect(getWayGroup({ leisure: "park" })).toEqual(GROUPS.Park);
 });
