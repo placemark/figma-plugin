@@ -31,10 +31,23 @@ figma.ui.postMessage({
   height: frame.height,
 });
 
+figma.clientStorage.getAsync("viewport").then((bbox) => {
+  if (bbox) {
+    figma.ui.postMessage({
+      type: "recover-viewport",
+      bbox,
+    });
+  }
+});
+
 figma.ui.onmessage = (msg) => {
   switch (msg.type) {
     case "cancel": {
       figma.closePlugin();
+      break;
+    }
+    case "save-viewport": {
+      figma.clientStorage.setAsync("viewport", msg.bbox);
       break;
     }
     case "render-map": {

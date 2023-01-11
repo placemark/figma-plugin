@@ -1,5 +1,5 @@
-import L from "leaflet";
-import "leaflet-control-geocoder";
+import * as L from "leaflet";
+import GeocoderControl from "leaflet-control-geocoder";
 
 const leafletMap = L.map("map", {
   zoomSnap: 0,
@@ -11,7 +11,7 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
 }).addTo(leafletMap);
 
-L.Control.geocoder({
+new GeocoderControl({
   defaultMarkGeocode: false,
 })
   .on("markgeocode", function (e: any) {
@@ -21,11 +21,35 @@ L.Control.geocoder({
   .addTo(leafletMap)
   .setPosition("topleft");
 
+leafletMap.on("moveend", () => {
+  parent.postMessage(
+    {
+      pluginMessage: {
+        type: "save-viewport",
+        bbox: leafletMap.getBounds().toBBoxString(),
+      },
+    },
+    "*"
+  );
+  leafletMap.getBounds().toBBoxString();
+});
+
 addEventListener("message", (evt) => {
   switch (evt.data?.pluginMessage?.type) {
     case "ratio": {
       const { width, height } = evt.data?.pluginMessage || {};
       setRatio(width, height);
+      break;
+    }
+    case "recover-viewport": {
+      const { bbox } = evt.data?.pluginMessage || {};
+      const [w, s, e, n] = bbox
+        .split(",")
+        .map((str: string) => parseFloat(str));
+      leafletMap.fitBounds([
+        [s, w],
+        [n, e],
+      ]);
       break;
     }
   }
