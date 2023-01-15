@@ -4,6 +4,7 @@ import { request } from "./request";
 import { applyStyle, STYLES } from "./styles";
 import { BBOX, GROUP_ORDER } from "./types";
 import { progress } from "./progress";
+import { getWater } from "./water";
 
 let frame = (() => {
   let sel = figma.currentPage.selection[0];
@@ -64,6 +65,9 @@ async function render(bbox: BBOX) {
   let { width, height, x, y } = frame;
   const scaleFactor = width / (bbox[2] - bbox[0]);
   const lerp = getLerp(bbox, [width, height], [x, y]);
+
+  const water = await getWater(bbox);
+  console.log(water);
 
   progress("Requesting data");
 
