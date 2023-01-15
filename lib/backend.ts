@@ -5,6 +5,14 @@ import { applyStyle, STYLES } from "./styles";
 import { BBOX, GROUP_ORDER } from "./types";
 import { progress } from "./progress";
 
+const STORAGE_KEY = "viewport";
+const ATTACHED_KEY = "data";
+
+type IAttachedData = {
+  version: 1;
+  bbox: string;
+};
+
 let frame = (() => {
   let sel = figma.currentPage.selection[0];
   if (sel?.type === "FRAME") {
@@ -31,14 +39,27 @@ figma.ui.postMessage({
   height: frame.height,
 });
 
-figma.clientStorage.getAsync("viewport").then((bbox) => {
-  if (bbox) {
-    figma.ui.postMessage({
-      type: "recover-viewport",
-      bbox,
-    });
-  }
-});
+const attached = frame.getPluginData(ATTACHED_KEY);
+if (attached) {
+  try {
+    const data = JSON.parse(attached);
+    if (data.version === 1) {
+      figma.ui.postMessage({
+        type: "recover-viewport",
+        bbox: data.bbox,
+      });
+    }
+  } catch (e) {}
+} else {
+  figma.clientStorage.getAsync(STORAGE_KEY).then((stored) => {
+    if (stored) {
+      figma.ui.postMessage({
+        type: "recover-viewport",
+        stored,
+      });
+    }
+  });
+}
 
 figma.ui.onmessage = (msg) => {
   switch (msg.type) {
@@ -47,10 +68,15 @@ figma.ui.onmessage = (msg) => {
       break;
     }
     case "save-viewport": {
-      figma.clientStorage.setAsync("viewport", msg.bbox);
+      figma.clientStorage.setAsync(STORAGE_KEY, msg.bbox);
       break;
     }
     case "render-map": {
+      const attached: IAttachedData = {
+        version: 1,
+        bbox: msg.bbox,
+      };
+      frame.setPluginData(ATTACHED_KEY, JSON.stringify(attached));
       render(msg.bbox.split(",").map((b: string) => parseFloat(b))).catch(
         (e) => {
           progress(e.message, { error: true });
