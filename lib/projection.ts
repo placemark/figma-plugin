@@ -5,9 +5,8 @@ const D2R = Math.PI / 180;
 /**
  * Project a lon/lat point into projected mercator space.
  */
-export function proj(ll: Pos2): Pos2 {
+export function proj(ll: Pos2, size = 524288): Pos2 {
   // Arbitrary.
-  var size = 524288;
   var d = size / 2;
   var bc = size / 360;
   var cc = size / (2 * Math.PI);
