@@ -62,8 +62,43 @@ export const STYLES: Record<GROUPS, () => Style> = {
       strokeWeight: 0,
     };
   }),
+  [GROUPS.University]: once(() => {
+    const fillStyle = createColorPaint255("Education spaces", [254, 255, 230]);
+    return {
+      fillStyleId: fillStyle.id,
+      strokeWeight: 0,
+    };
+  }),
+  [GROUPS.Industrial]: once(() => {
+    const fillStyle = createColorPaint255("Industrial", [236, 219, 233]);
+    return {
+      fillStyleId: fillStyle.id,
+      strokeWeight: 0,
+    };
+  }),
+  [GROUPS.Commercial]: once(() => {
+    const fillStyle = createColorPaint255("Commercial", [243, 217, 217]);
+    return {
+      fillStyleId: fillStyle.id,
+      strokeWeight: 0,
+    };
+  }),
+  [GROUPS.Residential]: once(() => {
+    const fillStyle = createColorPaint255("Residential areas", [225, 225, 225]);
+    return {
+      fillStyleId: fillStyle.id,
+      strokeWeight: 0,
+    };
+  }),
   [GROUPS.Wood]: once(() => {
     const fillStyle = createColorPaint255("Wood fill", [174, 209, 159]);
+    return {
+      fillStyleId: fillStyle.id,
+      strokeWeight: 0,
+    };
+  }),
+  [GROUPS.Pitch]: once(() => {
+    const fillStyle = createColorPaint255("Pitch fill", [170, 224, 203]);
     return {
       fillStyleId: fillStyle.id,
       strokeWeight: 0,

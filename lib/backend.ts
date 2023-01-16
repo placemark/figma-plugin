@@ -29,6 +29,7 @@ let frame = (() => {
   }
 
   let frame = figma.createFrame();
+  frame.name = "Placemark Map";
   frame.resize(720, 360);
   figma.viewport.scrollAndZoomIntoView([frame]);
   return frame;
@@ -64,7 +65,7 @@ if (attached) {
     if (stored) {
       figma.ui.postMessage({
         type: "recover-viewport",
-        stored,
+        bbox: stored,
       });
     }
   });

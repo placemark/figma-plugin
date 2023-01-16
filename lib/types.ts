@@ -60,6 +60,9 @@ export type Mark = MultiLine | Circle;
 
 export enum GROUPS {
   Park = "Park",
+  Commercial = "Commercial",
+  Pitch = "Pitch",
+  Residential = "Residential",
   Wood = "Wood",
   Rail = "Rail",
   ServiceRoad = "Service road",
@@ -71,12 +74,19 @@ export enum GROUPS {
   WaterLine = "Water lines",
   WaterArea = "Water area",
   Building = "Building",
+  University = "University",
+  Industrial = "Industrial",
   Tree = "Tree",
 }
 
 export const GROUP_ORDER = [
   GROUPS.Park,
   GROUPS.Wood,
+  GROUPS.University,
+  GROUPS.Industrial,
+  GROUPS.Commercial,
+  GROUPS.Residential,
+  GROUPS.Pitch,
   GROUPS.Water,
   GROUPS.WaterArea,
   GROUPS.WaterLine,
