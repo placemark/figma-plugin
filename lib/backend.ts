@@ -19,7 +19,9 @@ import { linelabel } from "./linelabel";
 
 // Don't show very long labels.
 const MAX_NAME_LENGTH = 20;
-
+// If something is smaller than 1/80 of the
+// map area, don't label it.
+const AREA_RATIO_CUTOFF = 80;
 const R2D = 180 / Math.PI;
 
 type IAttachedData = {
@@ -144,6 +146,7 @@ async function render(bbox: BBOX) {
   const labelSize = Math.max(frame.height / 40, 8);
   const labelIndex = new RBush();
   const labels = [];
+  const featureAreas = new Map<string, number>();
 
   for (const group of GROUP_ORDER) {
     const features = grouped.get(group);
@@ -186,6 +189,12 @@ async function render(bbox: BBOX) {
           });
 
           figma.currentPage.appendChild(vec);
+
+          featureAreas.set(
+            feature.properties!.id,
+            vec.absoluteBoundingBox!.width * vec.absoluteBoundingBox!.height
+          );
+
           vecs.push(vec);
           break;
         }
@@ -277,6 +286,8 @@ async function render(bbox: BBOX) {
     }
   }
 
+  const frameArea = frame.width * frame.height;
+
   for (const group of GROUP_AREA_LABEL_ORDER) {
     const features = grouped.get(group);
     if (!features) continue;
@@ -284,6 +295,12 @@ async function render(bbox: BBOX) {
       const name = feature.properties?.name;
       if (!(feature.geometry.type === "Polygon" && name)) continue;
       if (labeledNames.has(name) || name.length > MAX_NAME_LENGTH) continue;
+
+      const area = featureAreas.get(feature.properties!.id) || 0;
+      if (area < frameArea / AREA_RATIO_CUTOFF) {
+        continue;
+      }
+
       const point = lerp(proj(polylabel(feature.geometry.coordinates) as Pos2));
 
       if (point) {
