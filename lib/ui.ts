@@ -22,16 +22,27 @@ new GeocoderControl({
   .setPosition("topleft");
 
 leafletMap.on("moveend", () => {
+  const bbox = leafletMap.getBounds().toBBoxString();
+  const center = leafletMap.getCenter();
+  const zoom = leafletMap.getZoom();
   parent.postMessage(
     {
       pluginMessage: {
         type: "save-viewport",
-        bbox: leafletMap.getBounds().toBBoxString(),
+        bbox,
       },
     },
     "*"
   );
-  leafletMap.getBounds().toBBoxString();
+  document.body.dispatchEvent(
+    new CustomEvent("saveviewport", {
+      detail: {
+        bbox,
+        openstreetmap_url: `https://www.openstreetmap.org/#map=${zoom}/${center.lat}/${center.lng}`,
+        google_url: `https://www.google.com/maps?ll=${center.lat},${center.lng}&hl=en&t=m&z=${zoom}`,
+      },
+    })
+  );
 });
 
 addEventListener("message", (evt) => {

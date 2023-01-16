@@ -1,14 +1,25 @@
 const esbuild = require("esbuild");
 const Fs = require("fs");
 
+Fs.watchFile("lib/ui.html", (curr, prev) => {
+  buildTemplate();
+});
+
 function buildTemplate() {
   const template = Fs.readFileSync("lib/ui.html", "utf8");
   const js = Fs.readFileSync("dist/ui.js", "utf8");
+  const hyperscript = Fs.readFileSync(
+    "node_modules/hyperscript.org/dist/_hyperscript.min.js",
+    "utf8"
+  );
   const css = Fs.readFileSync("dist/ui.css", "utf8");
   console.log("Rebuilt template");
   Fs.writeFileSync(
     "dist/ui.html",
-    template.replace("{SCRIPT}", js).replace("{STYLE}", css)
+    template
+      .replace("{SCRIPT}", js)
+      .replace("{HYPERSCRIPT}", hyperscript)
+      .replace("{STYLE}", css)
   );
 }
 
@@ -60,6 +71,7 @@ esbuild
       onRebuild(error, result) {
         if (error) console.error("watch build (code) failed:", error);
         else console.log("watch build (code) succeeded:", result);
+        buildTemplate();
       },
     },
   })

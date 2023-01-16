@@ -9,10 +9,56 @@ body {
 
 #wrap {
   position: relative;
+  z-index: 1;
 }
 
-.dev #wrap {
-  width: 640px;
+.ui button {
+  background: var(--figma-color-bg, #fff);
+  color: var(--figma-color-text, #222);
+  padding: 5px;
+  border: 1px solid var(--figma-color-border, #777);
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+h2 {
+  font-size: 18px;
+  margin: 0;
+}
+
+label div {
+  font-size: 14px;
+  padding-bottom: 5px;
+}
+
+input[type=text] {
+  padding: 5px;
+  border: 1px solid var(--figma-color-border, #777);
+  border-radius: 4px;
+  width: 100%;
+}
+
+p {
+  font-size: 12px;
+  line-height: 14px;
+  opacity: 0.8;
+  padding-top: 5px;
+  margin: 0;
+}
+
+#settings {
+  position: absolute;
+  z-index: 999;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--figma-color-bg, #fff);
+  padding: 20px;
+}
+
+#settings.hidden {
+  display: none;
 }
 
 #controls {
@@ -25,15 +71,6 @@ body {
 
 #controls #message {
   text-overflow: truncate;
-  font-size: 14px;
-}
-
-#capture {
-  background: var(--figma-color-bg, #fff);
-  color: var(--figma-color-text, #222);
-  padding: 5px;
-  border: 1px solid var(--figma-color-border, #777);
-  border-radius: 4px;
   font-size: 14px;
 }
 

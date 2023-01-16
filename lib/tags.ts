@@ -7,6 +7,14 @@ import { GROUPS, Tags } from "./types";
 
 const supermajor_traffic_roads = new Set(["motorway", "motorway_link"]);
 
+const educational = new Set([
+  "school",
+  "university",
+  "college",
+  "music_school",
+  "driving_school",
+]);
+
 const major_traffic_roads = new Set([
   "trunk",
   "trunk_link",
@@ -40,6 +48,7 @@ const leisure = new Set([
   "park",
   "pitch",
   "track",
+  "sports_centre",
 ]);
 
 const service_roads = new Set(["service", "road", "track"]);
@@ -78,6 +87,13 @@ export function isWater(tags: Tags) {
     tags.landuse === "salt_pond" ||
     tags.leisure === "swimming_pool"
   );
+}
+export function isUniversity(tags: Tags) {
+  return educational.has(tags.amenity);
+}
+
+export function isPitch(tags: Tags) {
+  return tags.leisure === "pitch";
 }
 
 export function isPath(tags: Tags) {
@@ -131,6 +147,18 @@ export function isWood(tags: Tags) {
   return tags.natural === "wood" || tags.landuse === "forest";
 }
 
+export function isIndustrial(tags: Tags) {
+  return tags.landuse === "industrial";
+}
+
+export function isCommercial(tags: Tags) {
+  return tags.landuse === "commercial" || tags.landuse === "retail";
+}
+
+export function isResidential(tags: Tags) {
+  return tags.landuse === "residential";
+}
+
 export function getNodeGroup(tags: Tags): GROUPS | null {
   return (isTree(tags) && GROUPS.Tree) || null;
 }
@@ -146,6 +174,11 @@ export function getWayGroup(tags: Tags, haveRelation?: boolean): GROUPS | null {
     (isWaterLine(tags) && GROUPS.WaterLine) ||
     (isWater(tags) && (haveRelation ? GROUPS.WaterArea : GROUPS.Water)) ||
     (isBuilding(tags) && GROUPS.Building) ||
+    (isIndustrial(tags) && GROUPS.Industrial) ||
+    (isCommercial(tags) && GROUPS.Commercial) ||
+    (isResidential(tags) && GROUPS.Residential) ||
+    (isPitch(tags) && GROUPS.Pitch) ||
+    (isUniversity(tags) && GROUPS.University) ||
     (isPark(tags) && GROUPS.Park) ||
     (isWood(tags) && GROUPS.Wood) ||
     null
