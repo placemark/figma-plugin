@@ -36,7 +36,16 @@ let frame = (() => {
 })();
 
 const aspect = frame.width / frame.height;
-const dim = 720;
+
+let dim = Math.min(
+  720,
+  figma.viewport.bounds.width,
+  figma.viewport.bounds.height / aspect
+);
+
+if (dim / aspect > figma.viewport.bounds.height) {
+  dim = figma.viewport.bounds.height * aspect - 100;
+}
 
 figma.showUI(__html__, {
   width: Math.round(dim),
