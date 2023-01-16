@@ -2,6 +2,7 @@
   "compilerOptions": {
     "moduleResolution": "node",
     "target": "es6",
+    "allowSyntheticDefaultImports": true,
     "lib": ["es6", "dom"],
     "strict": true,
     "noEmit": true,
