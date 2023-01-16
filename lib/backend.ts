@@ -5,7 +5,6 @@ import { request } from "./request";
 import { applyStyle, labelStyle, STYLES } from "./styles";
 import {
   BBOX,
-  GROUPS,
   GROUP_AREA_LABEL_ORDER,
   GROUP_LABEL_ORDER,
   GROUP_ORDER,
@@ -17,6 +16,9 @@ import { getMaybeParentFrame } from "./selection";
 import { Position } from "geojson";
 import RBush from "rbush";
 import { linelabel } from "./linelabel";
+
+// Don't show very long labels.
+const MAX_NAME_LENGTH = 20;
 
 const R2D = 180 / Math.PI;
 
@@ -213,12 +215,15 @@ async function render(bbox: BBOX) {
     }
   }
 
+  let labeledNames = new Set<string>();
+
   for (const group of GROUP_LABEL_ORDER) {
     const features = grouped.get(group);
     if (!features) continue;
     for (let feature of features) {
       const name = feature.properties?.name;
       if (!(feature.geometry.type === "LineString" && name)) continue;
+      if (labeledNames.has(name) || name.length > MAX_NAME_LENGTH) continue;
       const projectedLine = projectRing(feature.geometry.coordinates);
       const firstLabel = linelabel(
         projectedLine,
@@ -265,6 +270,7 @@ async function render(bbox: BBOX) {
           } else {
             labelIndex.insert(placement);
             labels.push(label);
+            labeledNames.add(name);
           }
         }
       }
@@ -277,9 +283,8 @@ async function render(bbox: BBOX) {
     for (let feature of features) {
       const name = feature.properties?.name;
       if (!(feature.geometry.type === "Polygon" && name)) continue;
+      if (labeledNames.has(name) || name.length > MAX_NAME_LENGTH) continue;
       const point = lerp(proj(polylabel(feature.geometry.coordinates) as Pos2));
-
-      console.log(point);
 
       if (point) {
         const label = figma.createText();
@@ -309,6 +314,7 @@ async function render(bbox: BBOX) {
           } else {
             labelIndex.insert(placement);
             labels.push(label);
+            labeledNames.add(name);
           }
         }
       }
