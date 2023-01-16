@@ -1,3 +1,4 @@
+import { Feature, GeoJsonProperties } from "geojson";
 import { GROUPS, Tags } from "./types";
 
 /**
@@ -163,24 +164,41 @@ export function getNodeGroup(tags: Tags): GROUPS | null {
   return (isTree(tags) && GROUPS.Tree) || null;
 }
 
-export function getWayGroup(tags: Tags, haveRelation?: boolean): GROUPS | null {
+export function getWayGroup(feature: Feature): GROUPS | null {
+  const {
+    geometry: { type },
+    properties,
+  } = feature;
+  if (!properties) return null;
   return (
-    (isRail(tags) && GROUPS.Rail) ||
-    (isServiceRoad(tags) && GROUPS.ServiceRoad) ||
-    (isTrafficRoad(tags) && GROUPS.TrafficRoad) ||
-    (isTrafficRoadMajor(tags) && GROUPS.TrafficRoadMajor) ||
-    (isTrafficRoadSupermajor(tags) && GROUPS.TrafficRoadSupermajor) ||
-    (isPath(tags) && GROUPS.Path) ||
-    (isWaterLine(tags) && GROUPS.WaterLine) ||
-    (isWater(tags) && (haveRelation ? GROUPS.WaterArea : GROUPS.Water)) ||
-    (isBuilding(tags) && GROUPS.Building) ||
-    (isIndustrial(tags) && GROUPS.Industrial) ||
-    (isCommercial(tags) && GROUPS.Commercial) ||
-    (isResidential(tags) && GROUPS.Residential) ||
-    (isPitch(tags) && GROUPS.Pitch) ||
-    (isUniversity(tags) && GROUPS.University) ||
-    (isPark(tags) && GROUPS.Park) ||
-    (isWood(tags) && GROUPS.Wood) ||
+    (isRail(properties) && GROUPS.Rail) ||
+    (isServiceRoad(properties) && GROUPS.ServiceRoad) ||
+    (isTrafficRoad(properties) && GROUPS.TrafficRoad) ||
+    (isTrafficRoadMajor(properties) && GROUPS.TrafficRoadMajor) ||
+    (isTrafficRoadSupermajor(properties) && GROUPS.TrafficRoadSupermajor) ||
+    (isPath(properties) && GROUPS.Path) ||
+    (isWaterLine(properties) && GROUPS.WaterLine) ||
+    (isWater(properties) &&
+      (type === "Polygon" || type === "MultiPolygon"
+        ? GROUPS.WaterArea
+        : GROUPS.Water)) ||
+    (isBuilding(properties) && GROUPS.Building) ||
+    (isIndustrial(properties) && GROUPS.Industrial) ||
+    (isCommercial(properties) && GROUPS.Commercial) ||
+    (isResidential(properties) && GROUPS.Residential) ||
+    (isPitch(properties) && GROUPS.Pitch) ||
+    (isUniversity(properties) && GROUPS.University) ||
+    (isPark(properties) && GROUPS.Park) ||
+    (isWood(properties) && GROUPS.Wood) ||
     null
   );
+}
+
+export function getGroup(feature: Feature) {
+  const { properties } = feature;
+  if (!properties) return null;
+  if (feature.geometry.type === "Point") {
+    return getNodeGroup(properties);
+  }
+  return getWayGroup(feature);
 }

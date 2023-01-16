@@ -2,10 +2,11 @@ import { buildNetwork } from "./network";
 import { getLerp, proj } from "./projection";
 import { request } from "./request";
 import { applyStyle, STYLES } from "./styles";
-import { BBOX, GROUP_ORDER } from "./types";
+import { BBOX, GROUP_ORDER, Pos2 } from "./types";
 import { progress } from "./progress";
 import { STORAGE_KEY, ATTACHED_KEY } from "./constants";
 import { getMaybeParentFrame } from "./selection";
+import { Position } from "geojson";
 
 type IAttachedData = {
   version: 1;
@@ -106,44 +107,53 @@ async function render(bbox: BBOX) {
   const j = await request(bbox);
   progress("Building network");
 
-  const { grouped } = buildNetwork(j);
+  const grouped = buildNetwork(j);
   progress("Creating frame");
 
   let drawn = 0;
 
   clear();
 
+  function encodeRing(ring: Position[]) {
+    return ring
+      .map(
+        (position, i) =>
+          `${i === 0 ? "M" : "L"} ${lerp(proj(position as Pos2)).join(" ")}`
+      )
+      .join(" ");
+  }
+
   for (const group of GROUP_ORDER) {
-    const marks = grouped.get(group);
-    if (!marks) continue;
+    const features = grouped.get(group);
+    if (!features) continue;
 
     const vecs = [];
 
     const style = STYLES[group]();
 
-    for (const mark of marks) {
+    for (const feature of features) {
       drawn++;
-      progress(`Drawing (${drawn} / ${marks.length} elements)`);
+      progress(`Drawing (${drawn} / ${features.length} elements)`);
 
-      switch (mark.type) {
-        case "line": {
+      switch (feature.geometry.type) {
+        case "Polygon":
+        case "LineString":
+        case "MultiLineString": {
           const vec = figma.createVector();
           applyStyle(vec, style, scaleFactor);
 
-          if (mark.way.tags?.name) {
-            vec.name = mark.way.tags?.name;
+          if (feature.properties?.name) {
+            vec.name = feature.properties.name;
           }
 
-          const data = mark.nodes.map((way) => {
-            return way
-              .map(
-                (node, i) =>
-                  `${i === 0 ? "M" : "L"} ${lerp(
-                    proj([node.lon, node.lat])
-                  ).join(" ")}`
-              )
-              .join(" ");
-          });
+          const type = feature.geometry.type;
+
+          const data =
+            type === "LineString"
+              ? [encodeRing(feature.geometry.coordinates)]
+              : type === "MultiLineString" || type === "Polygon"
+              ? feature.geometry.coordinates.map(encodeRing)
+              : [];
 
           vec.vectorPaths = data.map((data) => {
             return {
@@ -156,15 +166,15 @@ async function render(bbox: BBOX) {
           vecs.push(vec);
           break;
         }
-        case "circle": {
+        case "Point": {
           const c = figma.createEllipse();
           applyStyle(c, style, scaleFactor);
 
-          if (mark.node.tags?.name) {
-            c.name = mark.node.tags?.name;
+          if (feature.properties?.name) {
+            c.name = feature.properties.name;
           }
 
-          const [x, y] = lerp(proj([mark.node.lon, mark.node.lat]));
+          const [x, y] = lerp(proj(feature.geometry.coordinates as Pos2));
           c.x = x;
           c.y = y;
 
@@ -175,9 +185,11 @@ async function render(bbox: BBOX) {
       }
     }
 
-    const figmaGroup = figma.group(vecs, frame);
-    figmaGroup.expanded = false;
-    figmaGroup.name = group;
+    if (vecs.length) {
+      const figmaGroup = figma.group(vecs, frame);
+      figmaGroup.expanded = false;
+      figmaGroup.name = group;
+    }
   }
 
   progress(`Writing attribution`);
