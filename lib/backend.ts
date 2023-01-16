@@ -1,12 +1,16 @@
 import { buildNetwork } from "./network";
 import { getLerp, proj } from "./projection";
 import { request } from "./request";
-import { applyStyle, STYLES } from "./styles";
-import { BBOX, GROUP_ORDER, Pos2 } from "./types";
+import { applyStyle, labelStyle, STYLES } from "./styles";
+import { BBOX, GROUPS, GROUP_LABEL_ORDER, GROUP_ORDER, Pos2 } from "./types";
 import { progress } from "./progress";
 import { STORAGE_KEY, ATTACHED_KEY } from "./constants";
 import { getMaybeParentFrame } from "./selection";
 import { Position } from "geojson";
+import RBush from "rbush";
+import { linelabel } from "./linelabel";
+
+const R2D = 180 / Math.PI;
 
 type IAttachedData = {
   version: 1;
@@ -114,6 +118,10 @@ async function render(bbox: BBOX) {
 
   clear();
 
+  function projectRing(ring: Position[]) {
+    return ring.map((position, i) => lerp(proj(position as Pos2)));
+  }
+
   function encodeRing(ring: Position[]) {
     return ring
       .map(
@@ -122,6 +130,10 @@ async function render(bbox: BBOX) {
       )
       .join(" ");
   }
+
+  const labelSize = Math.max(frame.height / 40, 8);
+  const labelIndex = new RBush();
+  const labels = [];
 
   for (const group of GROUP_ORDER) {
     const features = grouped.get(group);
@@ -135,6 +147,7 @@ async function render(bbox: BBOX) {
       drawn++;
       progress(`Drawing (${drawn} / ${features.length} elements)`);
 
+      const name = feature.properties?.name;
       switch (feature.geometry.type) {
         case "Polygon":
         case "LineString":
@@ -142,8 +155,8 @@ async function render(bbox: BBOX) {
           const vec = figma.createVector();
           applyStyle(vec, style, scaleFactor);
 
-          if (feature.properties?.name) {
-            vec.name = feature.properties.name;
+          if (name) {
+            vec.name = name;
           }
 
           const type = feature.geometry.type;
@@ -190,6 +203,69 @@ async function render(bbox: BBOX) {
       figmaGroup.expanded = false;
       figmaGroup.name = group;
     }
+  }
+
+  for (const group of GROUP_LABEL_ORDER) {
+    const features = grouped.get(group);
+    if (!features) continue;
+    for (let feature of features) {
+      const name = feature.properties?.name;
+      if (feature.geometry.type === "LineString" && name) {
+        const projectedLine = projectRing(feature.geometry.coordinates);
+        const firstLabel = linelabel(
+          projectedLine,
+          name.length * labelSize
+        ).filter((label) => label.length > name.length * labelSize * 0.5)[0];
+
+        if (firstLabel) {
+          const label = figma.createText();
+          frame.appendChild(label);
+          await figma.loadFontAsync(label.fontName as FontName);
+          label.characters = name;
+          label.fontSize = labelSize;
+          applyStyle(label, labelStyle(), scaleFactor);
+          const c1 = projectedLine[firstLabel.beginIndex];
+          const c2 = projectedLine[firstLabel.endIndex - 1];
+          let a: Pos2;
+          let b: Pos2;
+          if (c1[0] < c2[0]) {
+            a = c1;
+            b = c2;
+          } else {
+            a = c2;
+            b = c1;
+          }
+          const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
+          const offset = angle + Math.PI / 2;
+          label.x = a[0] - Math.cos(offset) * (labelSize / 1.7);
+          label.y = a[1] - Math.sin(offset) * (labelSize / 1.7);
+          // Not sure why this is negative! Investigate!
+          label.rotation = -angle * R2D;
+          figma.currentPage.appendChild(label);
+          const bbox = label.absoluteBoundingBox!;
+          if (bbox) {
+            const placement = {
+              minX: bbox.x,
+              minY: bbox.y,
+              maxY: bbox.y + bbox.height,
+              maxX: bbox.x + bbox.width,
+            };
+            if (labelIndex.collides(placement)) {
+              label.remove();
+            } else {
+              labelIndex.insert(placement);
+              labels.push(label);
+            }
+          }
+        }
+      }
+    }
+  }
+
+  if (labels.length) {
+    const figmaGroup = figma.group(labels, frame);
+    figmaGroup.expanded = false;
+    figmaGroup.name = "Labels";
   }
 
   progress(`Writing attribution`);

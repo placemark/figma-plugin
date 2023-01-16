@@ -27,7 +27,7 @@ export function getLerp(bbox: BBOX, [width, height]: Pos2, [dx, dy]: Pos2) {
   const sw = proj([bbox[0], bbox[1]]);
   const ne = proj([bbox[2], bbox[3]]);
 
-  return ([lon, lat]: Pos2) => {
+  return ([lon, lat]: Pos2): Pos2 => {
     return [
       (width * (lon - sw[0])) / (ne[0] - sw[0]) + dx,
       height - (height * (lat - sw[1])) / (ne[1] - sw[1]) + dy,
