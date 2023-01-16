@@ -36,6 +36,8 @@ input[type=text] {
   border: 1px solid var(--figma-color-border, #777);
   border-radius: 4px;
   width: 100%;
+  font-size: inherit;
+  font-family: inherit;
 }
 
 p {
@@ -44,6 +46,10 @@ p {
   opacity: 0.8;
   padding-top: 5px;
   margin: 0;
+}
+
+#settings a {
+  color: var(--figma-color-text-brand);
 }
 
 #settings {
