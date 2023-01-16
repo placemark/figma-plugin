@@ -65,6 +65,7 @@ export enum GROUPS {
   ServiceRoad = "Service road",
   TrafficRoad = "Traffic road",
   TrafficRoadMajor = "Traffic road major",
+  TrafficRoadSupermajor = "Traffic road super-major",
   Path = "Path",
   Water = "Water",
   WaterLine = "Water lines",
@@ -84,6 +85,7 @@ export const GROUP_ORDER = [
   GROUPS.ServiceRoad,
   GROUPS.TrafficRoad,
   GROUPS.TrafficRoadMajor,
+  GROUPS.TrafficRoadSupermajor,
   GROUPS.Path,
   GROUPS.Tree,
 ];

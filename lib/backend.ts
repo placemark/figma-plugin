@@ -4,9 +4,8 @@ import { request } from "./request";
 import { applyStyle, STYLES } from "./styles";
 import { BBOX, GROUP_ORDER } from "./types";
 import { progress } from "./progress";
-
-const STORAGE_KEY = "viewport";
-const ATTACHED_KEY = "data";
+import { STORAGE_KEY, ATTACHED_KEY } from "./constants";
+import { getMaybeParentFrame } from "./selection";
 
 type IAttachedData = {
   version: 1;
@@ -15,8 +14,18 @@ type IAttachedData = {
 
 let frame = (() => {
   let sel = figma.currentPage.selection[0];
+
   if (sel?.type === "FRAME") {
     return sel;
+  }
+
+  /**
+   * If the user has selected something inside of a map,
+   * find the map frame as a parent of that selection.
+   */
+  const parentSel = getMaybeParentFrame(sel);
+  if (parentSel) {
+    return parentSel;
   }
 
   let frame = figma.createFrame();

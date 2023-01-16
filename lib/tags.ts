@@ -5,9 +5,9 @@ import { GROUPS, Tags } from "./types";
  * https://github.com/openstreetmap/iD/blob/3dde091fdd3f8c5e54abd9923d642e67adb05064/modules/renderer/features.js
  */
 
+const supermajor_traffic_roads = new Set(["motorway", "motorway_link"]);
+
 const major_traffic_roads = new Set([
-  "motorway",
-  "motorway_link",
   "trunk",
   "trunk_link",
   "primary",
@@ -28,6 +28,7 @@ const traffic_roads = new Set([
 const landuse = new Set([
   "flowerbed",
   "grass",
+  "cemetery",
   "recreation_ground",
   "village_green",
 ]);
@@ -83,6 +84,10 @@ export function isPath(tags: Tags) {
   return paths.has(tags.highway);
 }
 
+export function isTrafficRoadSupermajor(tags: Tags) {
+  return supermajor_traffic_roads.has(tags.highway);
+}
+
 export function isTrafficRoadMajor(tags: Tags) {
   return major_traffic_roads.has(tags.highway);
 }
@@ -105,6 +110,7 @@ export function isRail(tags: Tags) {
     !(
       traffic_roads.has(tags.highway) ||
       major_traffic_roads.has(tags.highway) ||
+      supermajor_traffic_roads.has(tags.highway) ||
       service_roads.has(tags.highway) ||
       paths.has(tags.highway)
     )
@@ -135,6 +141,7 @@ export function getWayGroup(tags: Tags, haveRelation?: boolean): GROUPS | null {
     (isServiceRoad(tags) && GROUPS.ServiceRoad) ||
     (isTrafficRoad(tags) && GROUPS.TrafficRoad) ||
     (isTrafficRoadMajor(tags) && GROUPS.TrafficRoadMajor) ||
+    (isTrafficRoadSupermajor(tags) && GROUPS.TrafficRoadSupermajor) ||
     (isPath(tags) && GROUPS.Path) ||
     (isWaterLine(tags) && GROUPS.WaterLine) ||
     (isWater(tags) && (haveRelation ? GROUPS.WaterArea : GROUPS.Water)) ||
