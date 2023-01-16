@@ -20,7 +20,7 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 2px 5px 2px 10px;
+  padding: 5px 5px 5px 10px;
 }
 
 #controls #message {
@@ -35,13 +35,6 @@ body {
   border: 1px solid var(--figma-color-border, #777);
   border-radius: 4px;
   font-size: 14px;
-}
-
-#messages {
-  position: absolute;
-  top: 20px;
-  right: 10px;
-  z-index: 999;
 }
 
 .error {

@@ -100,11 +100,21 @@ export const STYLES: Record<GROUPS, () => Style> = {
   [GROUPS.TrafficRoadMajor]: once(() => {
     const strokeStyle = createColorPaint255(
       "Traffic road major",
-      [200, 190, 130]
+      [252, 214, 164]
     );
     return {
       strokeStyleId: strokeStyle.id,
-      strokeWeight: 4,
+      strokeWeight: 5,
+    };
+  }),
+  [GROUPS.TrafficRoadSupermajor]: once(() => {
+    const strokeStyle = createColorPaint255(
+      "Traffic road super-major",
+      [232, 146, 162]
+    );
+    return {
+      strokeStyleId: strokeStyle.id,
+      strokeWeight: 6,
     };
   }),
   [GROUPS.TrafficRoad]: once(() => {
