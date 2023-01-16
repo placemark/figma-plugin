@@ -1,8 +1,16 @@
 import { buildNetwork } from "./network";
 import { getLerp, proj } from "./projection";
+import polylabel from "polylabel";
 import { request } from "./request";
 import { applyStyle, labelStyle, STYLES } from "./styles";
-import { BBOX, GROUPS, GROUP_LABEL_ORDER, GROUP_ORDER, Pos2 } from "./types";
+import {
+  BBOX,
+  GROUPS,
+  GROUP_AREA_LABEL_ORDER,
+  GROUP_LABEL_ORDER,
+  GROUP_ORDER,
+  Pos2,
+} from "./types";
 import { progress } from "./progress";
 import { STORAGE_KEY, ATTACHED_KEY } from "./constants";
 import { getMaybeParentFrame } from "./selection";
@@ -210,52 +218,97 @@ async function render(bbox: BBOX) {
     if (!features) continue;
     for (let feature of features) {
       const name = feature.properties?.name;
-      if (feature.geometry.type === "LineString" && name) {
-        const projectedLine = projectRing(feature.geometry.coordinates);
-        const firstLabel = linelabel(
-          projectedLine,
-          name.length * labelSize
-        ).filter((label) => label.length > name.length * labelSize * 0.5)[0];
+      if (!(feature.geometry.type === "LineString" && name)) continue;
+      const projectedLine = projectRing(feature.geometry.coordinates);
+      const firstLabel = linelabel(
+        projectedLine,
+        name.length * labelSize
+      ).filter((label) => label.length > name.length * labelSize * 0.5)[0];
 
-        if (firstLabel) {
-          const label = figma.createText();
-          frame.appendChild(label);
-          await figma.loadFontAsync(label.fontName as FontName);
-          label.characters = name;
-          label.fontSize = labelSize;
-          applyStyle(label, labelStyle(), scaleFactor);
-          const c1 = projectedLine[firstLabel.beginIndex];
-          const c2 = projectedLine[firstLabel.endIndex - 1];
-          let a: Pos2;
-          let b: Pos2;
-          if (c1[0] < c2[0]) {
-            a = c1;
-            b = c2;
+      if (firstLabel) {
+        const label = figma.createText();
+        frame.appendChild(label);
+        await figma.loadFontAsync(label.fontName as FontName);
+        label.characters = name;
+        label.fontSize = labelSize;
+        applyStyle(label, labelStyle(), scaleFactor);
+        const c1 = projectedLine[firstLabel.beginIndex];
+        const c2 = projectedLine[firstLabel.endIndex - 1];
+        let a: Pos2;
+        let b: Pos2;
+        if (c1[0] < c2[0]) {
+          a = c1;
+          b = c2;
+        } else {
+          a = c2;
+          b = c1;
+        }
+        const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
+        const offset = angle + Math.PI / 2;
+        label.textAlignHorizontal = "CENTER";
+        label.textAlignVertical = "CENTER";
+        label.x = a[0] - Math.cos(offset) * (labelSize / 1.7);
+        label.y = a[1] - Math.sin(offset) * (labelSize / 1.7);
+        // Not sure why this is negative! Investigate!
+        label.rotation = -angle * R2D;
+        figma.currentPage.appendChild(label);
+        const bbox = label.absoluteBoundingBox!;
+        if (bbox) {
+          const placement = {
+            minX: bbox.x,
+            minY: bbox.y,
+            maxY: bbox.y + bbox.height,
+            maxX: bbox.x + bbox.width,
+          };
+          if (labelIndex.collides(placement)) {
+            label.remove();
           } else {
-            a = c2;
-            b = c1;
+            labelIndex.insert(placement);
+            labels.push(label);
           }
-          const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
-          const offset = angle + Math.PI / 2;
-          label.x = a[0] - Math.cos(offset) * (labelSize / 1.7);
-          label.y = a[1] - Math.sin(offset) * (labelSize / 1.7);
-          // Not sure why this is negative! Investigate!
-          label.rotation = -angle * R2D;
-          figma.currentPage.appendChild(label);
-          const bbox = label.absoluteBoundingBox!;
-          if (bbox) {
-            const placement = {
-              minX: bbox.x,
-              minY: bbox.y,
-              maxY: bbox.y + bbox.height,
-              maxX: bbox.x + bbox.width,
-            };
-            if (labelIndex.collides(placement)) {
-              label.remove();
-            } else {
-              labelIndex.insert(placement);
-              labels.push(label);
-            }
+        }
+      }
+    }
+  }
+
+  for (const group of GROUP_AREA_LABEL_ORDER) {
+    const features = grouped.get(group);
+    if (!features) continue;
+    for (let feature of features) {
+      const name = feature.properties?.name;
+      if (!(feature.geometry.type === "Polygon" && name)) continue;
+      const point = lerp(proj(polylabel(feature.geometry.coordinates) as Pos2));
+
+      console.log(point);
+
+      if (point) {
+        const label = figma.createText();
+        frame.appendChild(label);
+        await figma.loadFontAsync(label.fontName as FontName);
+        label.characters = name;
+        label.textAlignHorizontal = "CENTER";
+        label.textAlignVertical = "CENTER";
+        label.fontSize = labelSize;
+        applyStyle(label, labelStyle(), scaleFactor);
+
+        label.x = point[0];
+        label.y = point[1]; // - labelSize / 1.7;
+        // Not sure why this is negative! Investigate!
+        figma.currentPage.appendChild(label);
+        label.x -= label.width / 2;
+        const bbox = label.absoluteBoundingBox!;
+        if (bbox) {
+          const placement = {
+            minX: bbox.x,
+            minY: bbox.y,
+            maxY: bbox.y + bbox.height,
+            maxX: bbox.x + bbox.width,
+          };
+          if (labelIndex.collides(placement)) {
+            label.remove();
+          } else {
+            labelIndex.insert(placement);
+            labels.push(label);
           }
         }
       }
