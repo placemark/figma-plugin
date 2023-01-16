@@ -1,6 +1,10 @@
+import { GeoJsonProperties } from "geojson";
+
 export type Message = {
   type: "progress";
 };
+
+export type Tags = NonNullable<GeoJsonProperties>;
 
 export type Pos2 = [number, number];
 
@@ -13,7 +17,6 @@ export interface Bounds {
   maxlon: number;
 }
 
-export type Tags = Record<string, string>;
 type Id = number;
 
 export interface Element {
@@ -79,13 +82,16 @@ export enum GROUPS {
   Tree = "Tree",
 }
 
+/**
+ * From bottom to top
+ */
 export const GROUP_ORDER = [
-  GROUPS.Park,
-  GROUPS.Wood,
   GROUPS.University,
   GROUPS.Industrial,
   GROUPS.Commercial,
   GROUPS.Residential,
+  GROUPS.Park,
+  GROUPS.Wood,
   GROUPS.Pitch,
   GROUPS.Water,
   GROUPS.WaterArea,

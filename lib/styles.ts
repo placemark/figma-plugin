@@ -119,7 +119,7 @@ export const STYLES: Record<GROUPS, () => Style> = {
     };
   }),
   [GROUPS.WaterArea]: once(() => {
-    const fillStyle = createColorPaint("Water area stroke", [0.7, 0.7, 0.9]);
+    const fillStyle = createColorPaint("Water area fill", [0.7, 0.7, 0.9]);
     return {
       fillStyleId: fillStyle.id,
       strokeWeight: 0,

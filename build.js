@@ -67,6 +67,7 @@ esbuild
     watch: true,
     outfile: "dist/backend.js",
     logLevel: "info",
+    target: "es6",
     watch: {
       onRebuild(error, result) {
         if (error) console.error("watch build (code) failed:", error);
