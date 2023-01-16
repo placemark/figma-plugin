@@ -80,14 +80,12 @@ export enum GROUPS {
 }
 
 export const GROUP_ORDER = [
-  // Landuse
+  GROUPS.Park,
+  GROUPS.Wood,
   GROUPS.University,
   GROUPS.Industrial,
   GROUPS.Commercial,
   GROUPS.Residential,
-  // Greenery
-  GROUPS.Park,
-  GROUPS.Wood,
   GROUPS.Pitch,
   GROUPS.Water,
   GROUPS.WaterArea,
