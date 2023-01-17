@@ -44,6 +44,16 @@ function createColorPaint(name: string, [r, g, b]: [number, number, number]) {
   return style;
 }
 
+export const labelStyle = once(() => {
+  const fillStyle = createColorPaint255("Label fill", [0, 0, 0]);
+  const strokeStyle = createColorPaint255("Label stroke", [255, 255, 255]);
+  return {
+    fillStyleId: fillStyle.id,
+    strokeStyleId: strokeStyle.id,
+    strokeWeight: 1,
+  };
+});
+
 export const STYLES: Record<GROUPS, () => Style> = {
   [GROUPS.Building]: once(() => {
     const fillStyle = createColorPaint("Building fill", [0.8, 0.8, 0.8]);
@@ -184,7 +194,7 @@ export const STYLES: Record<GROUPS, () => Style> = {
 };
 
 export function applyStyle(
-  vec: VectorNode | EllipseNode,
+  vec: VectorNode | EllipseNode | TextNode,
   style: Style,
   scaleFactor: number
 ) {

@@ -105,3 +105,11 @@ export const GROUP_ORDER = [
   GROUPS.Path,
   GROUPS.Tree,
 ];
+
+export const GROUP_LABEL_ORDER = [
+  GROUPS.TrafficRoadSupermajor,
+  GROUPS.TrafficRoadMajor,
+  GROUPS.TrafficRoad,
+];
+
+export const GROUP_AREA_LABEL_ORDER = [GROUPS.Park, GROUPS.WaterArea];
