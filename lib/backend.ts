@@ -131,7 +131,7 @@ async function render(bbox: BBOX) {
   clear();
 
   function projectRing(ring: Position[]) {
-    return ring.map((position, i) => lerp(proj(position as Pos2)));
+    return ring.map((position) => lerp(proj(position as Pos2)));
   }
 
   function encodeRing(ring: Position[]) {
@@ -143,7 +143,7 @@ async function render(bbox: BBOX) {
       .join(" ");
   }
 
-  const labelSize = Math.max(frame.height / 40, 8);
+  const labelSize = Math.max(frame.height / 40, 6);
   const labelIndex = new RBush();
   const labels = [];
   const featureAreas = new Map<string, number>();
