@@ -149,7 +149,7 @@ async function getSettings(): Promise<Settings> {
   const combined = Object.assign({}, defaultSettings, settings);
 
   return {
-    labelSize: parseFloat(combined.labelSize),
+    labelSize: Math.max(1, parseFloat(combined.labelSize)),
   };
 }
 
@@ -297,17 +297,42 @@ async function render(bbox: BBOX) {
         return [c2, c1];
       }
 
-      function getLabelParameters(segment: LabelableSegment) {
+      function getLabelParameters(
+        segment: LabelableSegment,
+        labelWidth: number
+      ) {
         const [a, b] = getLabelEndpoints(segment);
+
+        const segmentWidth = Math.sqrt(
+          Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2)
+        );
 
         const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
         const offset = angle + Math.PI / 2;
+        const slackPercentage = segmentWidth / labelWidth;
 
-        return {
-          rotation: -angle * R2D,
-          x: a[0] - Math.cos(offset) * (labelSize / 1.7),
-          y: a[1] - Math.sin(offset) * (labelSize / 1.7),
-        };
+        let startPaddings =
+          slackPercentage > 1
+            ? [(segmentWidth - labelWidth) / 2, segmentWidth - labelWidth, 0]
+            : [0];
+
+        return startPaddings
+          .map((startPadding) => {
+            let pa = [
+              a[0] + Math.cos(angle) * startPadding,
+              a[1] + Math.sin(angle) * startPadding,
+            ];
+
+            return {
+              slackPercentage,
+              rotation: -angle * R2D,
+              x: pa[0] - Math.cos(offset) * (labelSize / 1.7),
+              y: pa[1] - Math.sin(offset) * (labelSize / 1.7),
+            };
+          })
+          .filter((params) => {
+            return params.x >= 0 && params.y >= 0;
+          });
       }
 
       const label = figma.createText();
@@ -323,13 +348,15 @@ async function render(bbox: BBOX) {
       let foundPosition = false;
       let positionsTried = 0;
 
-      // Try each possible position.
-      for (let segment of labelPositions) {
-        positionsTried++;
-        const { rotation, x, y } = getLabelParameters(segment);
+      const labelWidth = label.width;
 
-        // Bail if this label is outside of the canvas.
-        if (x < 0 || y < 0) continue;
+      const params = labelPositions.flatMap((segment) =>
+        getLabelParameters(segment, labelWidth)
+      );
+
+      // Try each possible position.
+      for (let { rotation, x, y } of params) {
+        positionsTried++;
 
         label.rotation = rotation;
         label.x = x;
@@ -352,7 +379,12 @@ async function render(bbox: BBOX) {
         }
       }
 
-      console.log({ positionsTried, foundPosition });
+      console.log({
+        positionsTried,
+        foundPosition,
+        name,
+        paramsAvailable: params.length,
+      });
 
       if (!foundPosition) {
         label.remove();
