@@ -15,7 +15,7 @@ import { STORAGE_KEY, ATTACHED_KEY } from "./constants";
 import { getMaybeParentFrame } from "./selection";
 import { Position } from "geojson";
 import RBush from "rbush";
-import { linelabel } from "./linelabel";
+import { LabelableSegment, linelabel } from "./linelabel";
 
 // Don't show very long labels.
 const MAX_NAME_LENGTH = 20;
@@ -88,6 +88,15 @@ if (attached) {
   });
 }
 
+figma.clientStorage.getAsync("settings").then((settings) => {
+  if (settings) {
+    figma.ui.postMessage({
+      type: "settings",
+      settings,
+    });
+  }
+});
+
 figma.ui.onmessage = (msg) => {
   switch (msg.type) {
     case "cancel": {
@@ -96,6 +105,15 @@ figma.ui.onmessage = (msg) => {
     }
     case "save-viewport": {
       figma.clientStorage.setAsync(STORAGE_KEY, msg.bbox);
+      break;
+    }
+    case "setting": {
+      figma.clientStorage.getAsync("settings").then((settings) => {
+        if (!settings) settings = {};
+        settings[msg.name] = msg.value;
+        console.log({ settings });
+        return figma.clientStorage.setAsync("settings", settings);
+      });
       break;
     }
     case "render-map": {
@@ -113,7 +131,30 @@ figma.ui.onmessage = (msg) => {
   }
 };
 
+interface Settings {
+  labelSize: number;
+}
+
+const defaultSettings: Settings = {
+  labelSize: 5,
+};
+
+async function getSettings(): Promise<Settings> {
+  const settings = (await figma.clientStorage.getAsync("settings")) || {};
+
+  if (!settings) {
+    return defaultSettings;
+  }
+
+  const combined = Object.assign({}, defaultSettings, settings);
+
+  return {
+    labelSize: parseFloat(combined.labelSize),
+  };
+}
+
 async function render(bbox: BBOX) {
+  const settings = await getSettings();
   let { width, height, x, y } = frame;
   const scaleFactor = width / (bbox[2] - bbox[0]);
   const lerp = getLerp(bbox, [width, height], [x, y]);
@@ -143,7 +184,8 @@ async function render(bbox: BBOX) {
       .join(" ");
   }
 
-  const labelSize = Math.max(frame.height / 40, 6);
+  const labelSize = settings.labelSize * (frame.height / 180);
+  console.log(settings.labelSize, labelSize);
   const labelIndex = new RBush();
   const labels = [];
   const featureAreas = new Map<string, number>();
@@ -239,55 +281,81 @@ async function render(bbox: BBOX) {
         name.length * labelSize
       ).filter((label) => label.length > name.length * labelSize * 0.5);
 
-      const firstLabel = labelPositions[Math.floor(labelPositions.length / 2)];
+      // If there are no viable positions, bail.
+      if (!labelPositions.length) {
+        continue;
+      }
 
-      if (firstLabel) {
-        const c1 = projectedLine[firstLabel.beginIndex];
-        const c2 = projectedLine[firstLabel.endIndex - 1];
-        let a: Pos2;
-        let b: Pos2;
+      function getLabelEndpoints(segment: LabelableSegment) {
+        const c1 = projectedLine[segment.beginIndex];
+        const c2 = projectedLine[segment.endIndex - 1];
+
         if (c1[0] < c2[0]) {
-          a = c1;
-          b = c2;
-        } else {
-          a = c2;
-          b = c1;
+          return [c1, c2];
         }
 
-        if (a[0] > 0 && a[1] > 0) {
-          const label = figma.createText();
-          frame.appendChild(label);
-          await figma.loadFontAsync(label.fontName as FontName);
-          label.characters = name;
-          label.fontSize = labelSize;
-          applyStyle(label, labelStyle(), scaleFactor);
+        return [c2, c1];
+      }
 
-          const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
-          const offset = angle + Math.PI / 2;
-          label.textAlignHorizontal = "CENTER";
-          label.textAlignVertical = "CENTER";
-          label.x = a[0] - Math.cos(offset) * (labelSize / 1.7);
-          label.y = a[1] - Math.sin(offset) * (labelSize / 1.7);
-          // Not sure why this is negative! Investigate!
-          label.rotation = -angle * R2D;
-          figma.currentPage.appendChild(label);
-          const bbox = label.absoluteBoundingBox!;
-          if (bbox) {
-            const placement = {
-              minX: bbox.x,
-              minY: bbox.y,
-              maxY: bbox.y + bbox.height,
-              maxX: bbox.x + bbox.width,
-            };
-            if (labelIndex.collides(placement)) {
-              label.remove();
-            } else {
-              labelIndex.insert(placement);
-              labels.push(label);
-              labeledNames.add(name);
-            }
-          }
+      function getLabelParameters(segment: LabelableSegment) {
+        const [a, b] = getLabelEndpoints(segment);
+
+        const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
+        const offset = angle + Math.PI / 2;
+
+        return {
+          rotation: -angle * R2D,
+          x: a[0] - Math.cos(offset) * (labelSize / 1.7),
+          y: a[1] - Math.sin(offset) * (labelSize / 1.7),
+        };
+      }
+
+      const label = figma.createText();
+      frame.appendChild(label);
+      await figma.loadFontAsync(label.fontName as FontName);
+      label.characters = name;
+      label.fontSize = labelSize;
+      applyStyle(label, labelStyle(), scaleFactor);
+      label.textAlignHorizontal = "CENTER";
+      label.textAlignVertical = "CENTER";
+      figma.currentPage.appendChild(label);
+
+      let foundPosition = false;
+      let positionsTried = 0;
+
+      // Try each possible position.
+      for (let segment of labelPositions) {
+        positionsTried++;
+        const { rotation, x, y } = getLabelParameters(segment);
+
+        // Bail if this label is outside of the canvas.
+        if (x < 0 || y < 0) continue;
+
+        label.rotation = rotation;
+        label.x = x;
+        label.y = y;
+        // Not sure why this is negative! Investigate!
+        const bbox = label.absoluteBoundingBox!;
+        if (!bbox) continue;
+        const placement = {
+          minX: bbox.x,
+          minY: bbox.y,
+          maxY: bbox.y + bbox.height,
+          maxX: bbox.x + bbox.width,
+        };
+        if (!labelIndex.collides(placement)) {
+          labelIndex.insert(placement);
+          labels.push(label);
+          labeledNames.add(name);
+          foundPosition = true;
+          break;
         }
+      }
+
+      console.log({ positionsTried, foundPosition });
+
+      if (!foundPosition) {
+        label.remove();
       }
     }
   }
@@ -321,7 +389,7 @@ async function render(bbox: BBOX) {
           applyStyle(label, labelStyle(), scaleFactor);
 
           label.x = point[0];
-          label.y = point[1]; // - labelSize / 1.7;
+          label.y = point[1];
           // Not sure why this is negative! Investigate!
           figma.currentPage.appendChild(label);
           label.x -= label.width / 2;

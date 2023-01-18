@@ -52,6 +52,21 @@ addEventListener("message", (evt) => {
       setRatio(width, height);
       break;
     }
+    case "settings": {
+      try {
+        for (const [name, value] of Object.entries(
+          evt.data.pluginMessage.settings
+        )) {
+          const input = document.body.querySelector(`[name=${name}]`);
+          if (input && "value" in input) {
+            input.value = value;
+          }
+        }
+      } catch (e) {
+        console.error(e);
+      }
+      break;
+    }
     case "recover-viewport": {
       const { bbox } = evt.data?.pluginMessage || {};
       const [w, s, e, n] = bbox
@@ -85,4 +100,21 @@ function setRatio(width: number, height: number) {
     30
   ).toFixed(3)}px`;
   leafletMap.invalidateSize();
+}
+
+for (const elem of Array.from(document.querySelectorAll("[data-setting]"))) {
+  elem.addEventListener("change", (e) => {
+    if (!e.target) return;
+    const target = e.target as HTMLInputElement;
+    parent.postMessage(
+      {
+        pluginMessage: {
+          type: "setting",
+          name: target.name,
+          value: target.value,
+        },
+      },
+      "*"
+    );
+  });
 }

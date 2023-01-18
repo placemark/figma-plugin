@@ -212,10 +212,7 @@ export function applyStyle(
       vec.strokeWeight = 0;
     } else {
       vec.strokeJoin = "ROUND";
-      vec.strokeWeight = Math.max(
-        0.2,
-        Math.round(style.strokeWeight * (scaleFactor * 0.00002))
-      );
+      vec.strokeWeight = style.strokeWeight * (scaleFactor * 0.00002);
     }
   }
 
