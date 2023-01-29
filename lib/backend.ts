@@ -16,6 +16,7 @@ import { getMaybeParentFrame } from "./selection";
 import { Position } from "geojson";
 import RBush from "rbush";
 import { LabelableSegment, linelabel } from "./linelabel";
+import { centerSort } from "./center_sort";
 
 // Don't show very long labels.
 const MAX_NAME_LENGTH = 20;
@@ -111,7 +112,6 @@ figma.ui.onmessage = (msg) => {
       figma.clientStorage.getAsync("settings").then((settings) => {
         if (!settings) settings = {};
         settings[msg.name] = msg.value;
-        console.log({ settings });
         return figma.clientStorage.setAsync("settings", settings);
       });
       break;
@@ -184,10 +184,23 @@ async function render(bbox: BBOX) {
       .join(" ");
   }
 
+  /**
+   * Label size is relative to the size of the output, because drawings
+   * can be any pixel size imaginable.
+   */
   const labelSize = settings.labelSize * (frame.height / 180);
-  console.log(settings.labelSize, labelSize);
+
+  /**
+   * This index is used to make sure that labels don’t collide.
+   */
   const labelIndex = new RBush();
   const labels = [];
+
+  /**
+   * For labels on areas, we want to prioritize labels by the size
+   * of the area in descending order. So, this map keeps track of each
+   * feature's area.
+   */
   const featureAreas = new Map<string, number>();
 
   for (const group of GROUP_ORDER) {
@@ -276,10 +289,11 @@ async function render(bbox: BBOX) {
       if (!(feature.geometry.type === "LineString" && name)) continue;
       if (labeledNames.has(name) || name.length > MAX_NAME_LENGTH) continue;
       const projectedLine = projectRing(feature.geometry.coordinates);
-      const labelPositions = linelabel(
-        projectedLine,
-        name.length * labelSize
-      ).filter((label) => label.length > name.length * labelSize * 0.5);
+      const labelPositions = centerSort(
+        linelabel(projectedLine, name.length * labelSize).filter(
+          (label) => label.length > name.length * labelSize * 0.5
+        )
+      );
 
       // If there are no viable positions, bail.
       if (!labelPositions.length) {
@@ -299,38 +313,60 @@ async function render(bbox: BBOX) {
 
       function getLabelParameters(segment: LabelableSegment) {
         const [a, b] = getLabelEndpoints(segment);
+        const width = Math.sqrt(
+          Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2)
+        );
 
         const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
         const offset = angle + Math.PI / 2;
 
         return {
+          width,
           rotation: -angle * R2D,
           x: a[0] - Math.cos(offset) * (labelSize / 1.7),
           y: a[1] - Math.sin(offset) * (labelSize / 1.7),
         };
       }
 
+      /**
+       * First we place the label, before
+       * figuring out whether it can fit anywhere or moving
+       * it around. We're using Figma's own ability to compute
+       * the bounding box of the text to do this.
+       */
       const label = figma.createText();
       frame.appendChild(label);
       await figma.loadFontAsync(label.fontName as FontName);
       label.characters = name;
       label.fontSize = labelSize;
-      applyStyle(label, labelStyle(), scaleFactor);
+      applyStyle(label, labelStyle(scaleFactor), scaleFactor);
       label.textAlignHorizontal = "CENTER";
       label.textAlignVertical = "CENTER";
       figma.currentPage.appendChild(label);
+      let initialHeight = label.height;
 
+      /**
+       * We use this as a lazy way to keep track of whether
+       * the label has been able to be placed somewhere
+       * without a collision.
+       */
       let foundPosition = false;
-      let positionsTried = 0;
 
       // Try each possible position.
       for (let segment of labelPositions) {
-        positionsTried++;
-        const { rotation, x, y } = getLabelParameters(segment);
+        const { rotation, x, y, width } = getLabelParameters(segment);
+
+        // Debugging - this draws ellipses at label points.
+        // const c = figma.createEllipse();
+        // c.fills = [{ color: { r: 1, g: 0, b: 0 }, type: "SOLID" }];
+        // c.resize(2, 2);
+        // c.x = x;
+        // c.y = y;
 
         // Bail if this label is outside of the canvas.
         if (x < 0 || y < 0) continue;
 
+        label.resize(width, initialHeight);
         label.rotation = rotation;
         label.x = x;
         label.y = y;
@@ -352,8 +388,10 @@ async function render(bbox: BBOX) {
         }
       }
 
-      console.log({ positionsTried, foundPosition });
-
+      /**
+       * We've exhausted all options for placing
+       * this label, so remove it from the map.
+       */
       if (!foundPosition) {
         label.remove();
       }
@@ -362,6 +400,10 @@ async function render(bbox: BBOX) {
 
   const frameArea = frame.width * frame.height;
 
+  /**
+   * All lines have been labeled: now try to label areas,
+   * if we can.
+   */
   for (const group of GROUP_AREA_LABEL_ORDER) {
     const features = grouped.get(group);
     if (!features) continue;
@@ -386,12 +428,12 @@ async function render(bbox: BBOX) {
           label.textAlignHorizontal = "CENTER";
           label.textAlignVertical = "CENTER";
           label.fontSize = labelSize;
-          applyStyle(label, labelStyle(), scaleFactor);
+          applyStyle(label, labelStyle(scaleFactor), scaleFactor);
 
           label.x = point[0];
           label.y = point[1];
-          // Not sure why this is negative! Investigate!
           figma.currentPage.appendChild(label);
+          // Not sure why this is negative! Investigate!
           label.x -= label.width / 2;
           const bbox = label.absoluteBoundingBox!;
           if (bbox) {

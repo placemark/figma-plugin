@@ -26,8 +26,14 @@ h2 {
   margin: 0;
 }
 
+label {
+  display: block;
+  margin-top: 20px;
+}
+
 label div {
   font-size: 14px;
+  font-weight: 500;
   padding-bottom: 5px;
 }
 
