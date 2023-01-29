@@ -210,12 +210,15 @@ export function applyStyle(
   if (style.strokeWeight !== undefined) {
     if (style.strokeWeight === 0) {
       vec.strokeWeight = 0;
-    } else {
+    } else if (vec.type === "TEXT") {
       vec.strokeJoin = "ROUND";
       vec.strokeWeight = Math.max(
-        0.2,
-        Math.round(style.strokeWeight * (scaleFactor * 0.00002))
+        1,
+        style.strokeWeight * (scaleFactor * 0.000002)
       );
+    } else {
+      vec.strokeJoin = "ROUND";
+      vec.strokeWeight = style.strokeWeight * (scaleFactor * 0.00002);
     }
   }
 
