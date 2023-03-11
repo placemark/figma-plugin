@@ -17,10 +17,18 @@
     "vitest": "^0.26.3"
   },
   "dependencies": {
+    "@mapbox/geojson-normalize": "^0.0.1",
+    "@placemarkio/check-geojson": "^0.1.12",
+    "@placemarkio/geojson-rewind": "^1.0.2",
+    "@types/d3-geo": "^3.0.3",
     "@types/geojson": "^7946.0.10",
     "@types/leaflet": "^1.9.0",
     "@types/polylabel": "^1.0.5",
     "@types/rbush": "^3.0.0",
+    "browser-fs-access": "^0.33.0",
+    "d3": "^7.8.2",
+    "d3-geo": "^3.1.0",
+    "geojson-normalize": "^0.0.1",
     "hyperscript.org": "^0.9.7",
     "leaflet": "^1.9.3",
     "leaflet-control-geocoder": "^2.4.0",

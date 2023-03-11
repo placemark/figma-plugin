@@ -1,8 +1,10 @@
 import { buildNetwork } from "./network";
-import { getLerp, proj } from "./projection";
 import polylabel from "polylabel";
+import { geoMercator, geoStream } from "d3-geo";
 import { request } from "./request";
-import { applyStyle, labelStyle, STYLES } from "./styles";
+import normalize from "@mapbox/geojson-normalize";
+import { rewindFeatureCollection } from "@placemarkio/geojson-rewind";
+import { applyStyle, getStyles } from "./styles";
 import {
   BBOX,
   GROUP_AREA_LABEL_ORDER,
@@ -18,12 +20,30 @@ import RBush from "rbush";
 import { LabelableSegment, linelabel } from "./linelabel";
 import { centerSort } from "./center_sort";
 
+function rewindRing(ring: Position[], dir: boolean) {
+  var area = 0,
+    err = 0;
+  for (var i = 0, len = ring.length, j = len - 1; i < len; j = i++) {
+    var k = (ring[i][0] - ring[j][0]) * (ring[j][1] + ring[i][1]);
+    var m = area + k;
+    err += Math.abs(area) >= Math.abs(k) ? area - m + k : k - m + area;
+    area = m;
+  }
+  if (area + err >= 0 !== !!dir) ring.reverse();
+  return ring;
+}
+
 // Don't show very long labels.
 const MAX_NAME_LENGTH = 20;
 // If something is smaller than 1/80 of the
 // map area, don't label it.
 const AREA_RATIO_CUTOFF = 80;
 const R2D = 180 / Math.PI;
+
+type Overlay = {
+  name: string;
+  geojson: any;
+};
 
 type IAttachedData = {
   version: 1;
@@ -58,7 +78,7 @@ const dim = 720;
 
 figma.showUI(__html__, {
   width: Math.round(dim),
-  height: Math.round(dim / aspect) + 80,
+  height: Math.round(dim / aspect) + 50,
 });
 
 figma.ui.postMessage({
@@ -122,21 +142,24 @@ figma.ui.onmessage = (msg) => {
         bbox: msg.bbox,
       };
       frame.setPluginData(ATTACHED_KEY, JSON.stringify(attached));
-      render(msg.bbox.split(",").map((b: string) => parseFloat(b))).catch(
-        (e) => {
-          progress(e.message, { error: true });
-        }
-      );
+      render(
+        msg.bbox.split(",").map((b: string) => parseFloat(b)),
+        { overlays: msg.overlays }
+      ).catch((e) => {
+        progress(e.message, { error: true });
+      });
     }
   }
 };
 
 interface Settings {
   labelSize: number;
+  resetStyles: boolean;
 }
 
 const defaultSettings: Settings = {
   labelSize: 5,
+  resetStyles: false,
 };
 
 async function getSettings(): Promise<Settings> {
@@ -150,14 +173,39 @@ async function getSettings(): Promise<Settings> {
 
   return {
     labelSize: parseFloat(combined.labelSize),
+    resetStyles: !!combined.resetStyles,
   };
 }
 
-async function render(bbox: BBOX) {
+interface Options {
+  overlays?: any[];
+}
+
+async function render(bbox: BBOX, options: Options = {}) {
+  const overlays = options?.overlays || [];
   const settings = await getSettings();
   let { width, height, x, y } = frame;
   const scaleFactor = width / (bbox[2] - bbox[0]);
-  const lerp = getLerp(bbox, [width, height], [x, y]);
+  const { STYLES, labelStyle } = getStyles(!!settings.resetStyles);
+
+  const proj = geoMercator()
+    .fitExtent(
+      [
+        [x, y],
+        [x + width, y + height],
+      ],
+      {
+        type: "LineString",
+        coordinates: [
+          [bbox[0], bbox[1]],
+          [bbox[2], bbox[3]],
+        ],
+      }
+    )
+    .clipExtent([
+      [x - 100, y - 100],
+      [x + width + 100, y + height + 100],
+    ]);
 
   progress("Requesting data");
 
@@ -172,14 +220,23 @@ async function render(bbox: BBOX) {
   clear();
 
   function projectRing(ring: Position[]) {
-    return ring.map((position) => lerp(proj(position as Pos2)));
+    return ring.map((position) => proj(position as Pos2)!);
+  }
+
+  function encodeRingXY(ring: Position[]) {
+    return ring
+      .map(
+        (position, i) =>
+          `${i === 0 ? "M" : "L"} ${(position as Pos2)?.join(" ")}`
+      )
+      .join(" ");
   }
 
   function encodeRing(ring: Position[]) {
     return ring
       .map(
         (position, i) =>
-          `${i === 0 ? "M" : "L"} ${lerp(proj(position as Pos2)).join(" ")}`
+          `${i === 0 ? "M" : "L"} ${proj(position as Pos2)?.join(" ")}`
       )
       .join(" ");
   }
@@ -261,7 +318,7 @@ async function render(bbox: BBOX) {
             c.name = feature.properties.name;
           }
 
-          const [x, y] = lerp(proj(feature.geometry.coordinates as Pos2));
+          const [x, y] = proj(feature.geometry.coordinates as Pos2)!;
           c.x = x;
           c.y = y;
 
@@ -277,6 +334,96 @@ async function render(bbox: BBOX) {
       figmaGroup.expanded = false;
       figmaGroup.name = group;
     }
+  }
+
+  try {
+    progress("Drawing overlays…");
+    for (const overlay of overlays) {
+      const vecs: Array<VectorNode | EllipseNode> = [];
+      let context: "POLYGON" | "LINE" | null = null;
+      let data: Array<Array<[number, number]>> = [];
+
+      const stream = proj.stream({
+        point(x, y) {
+          if (context === null) {
+            const c = figma.createEllipse();
+            applyStyle(c, STYLES.OverlayPoint(), scaleFactor);
+            c.x = x;
+            c.y = y;
+            figma.currentPage.appendChild(c);
+            vecs.push(c);
+            return;
+          } else {
+            data[data.length - 1]?.push([x, y]);
+          }
+        },
+        lineStart() {
+          if (context !== "POLYGON") {
+            context = "LINE";
+            data = [];
+          }
+          data.push([]);
+        },
+        lineEnd() {
+          if (context === "POLYGON") {
+            return;
+          }
+
+          context = null;
+
+          const vec = figma.createVector();
+
+          applyStyle(vec, STYLES.OverlayLine(), scaleFactor);
+
+          vec.vectorPaths = data.map((d) => {
+            return {
+              windingRule: "EVENODD",
+              data: encodeRingXY(d),
+            };
+          });
+
+          data = [];
+
+          vecs.push(vec);
+        },
+        polygonStart() {
+          context = "POLYGON";
+        },
+        polygonEnd() {
+          context = null;
+          const vec = figma.createVector();
+
+          applyStyle(vec, STYLES.OverlayPolygon(), scaleFactor);
+
+          vec.vectorPaths = data.map((ring) => {
+            ring.push(ring[0]);
+            return {
+              windingRule: "EVENODD",
+              data: encodeRingXY(ring),
+            };
+          });
+
+          data = [];
+
+          vecs.push(vec);
+        },
+        sphere() {},
+      });
+
+      const normalized = rewindFeatureCollection(
+        normalize(overlay.geojson),
+        "d3"
+      );
+
+      geoStream(normalized, stream);
+
+      const figmaGroup = figma.group(vecs, frame);
+      figmaGroup.expanded = false;
+      figmaGroup.name = overlay.name;
+    }
+  } catch (e) {
+    console.error(e);
+    progress("Failed to draw overlays", { error: true });
   }
 
   let labeledNames = new Set<string>();
@@ -339,7 +486,8 @@ async function render(bbox: BBOX) {
       await figma.loadFontAsync(label.fontName as FontName);
       label.characters = name;
       label.fontSize = labelSize;
-      applyStyle(label, labelStyle(scaleFactor), scaleFactor);
+      applyStyle(label, labelStyle(), scaleFactor);
+      label.textAutoResize = "WIDTH_AND_HEIGHT";
       label.textAlignHorizontal = "CENTER";
       label.textAlignVertical = "CENTER";
       figma.currentPage.appendChild(label);
@@ -355,13 +503,6 @@ async function render(bbox: BBOX) {
       // Try each possible position.
       for (let segment of labelPositions) {
         const { rotation, x, y, width } = getLabelParameters(segment);
-
-        // Debugging - this draws ellipses at label points.
-        // const c = figma.createEllipse();
-        // c.fills = [{ color: { r: 1, g: 0, b: 0 }, type: "SOLID" }];
-        // c.resize(2, 2);
-        // c.x = x;
-        // c.y = y;
 
         // Bail if this label is outside of the canvas.
         if (x < 0 || y < 0) continue;
@@ -417,7 +558,7 @@ async function render(bbox: BBOX) {
         continue;
       }
 
-      const point = lerp(proj(polylabel(feature.geometry.coordinates) as Pos2));
+      const point = proj(polylabel(feature.geometry.coordinates) as Pos2);
 
       if (point) {
         if (point[0] > 0 && point[1] > 0) {
@@ -428,7 +569,7 @@ async function render(bbox: BBOX) {
           label.textAlignHorizontal = "CENTER";
           label.textAlignVertical = "CENTER";
           label.fontSize = labelSize;
-          applyStyle(label, labelStyle(scaleFactor), scaleFactor);
+          applyStyle(label, labelStyle(), scaleFactor);
 
           label.x = point[0];
           label.y = point[1];
