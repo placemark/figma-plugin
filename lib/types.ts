@@ -63,6 +63,9 @@ export type Mark = MultiLine | Circle;
 
 export enum GROUPS {
   Park = "Park",
+  OverlayPoint = "OverlayPoint",
+  OverlayPolygon = "OverlayPolygon",
+  OverlayLine = "OverlayLine",
   Commercial = "Commercial",
   Pitch = "Pitch",
   Residential = "Residential",

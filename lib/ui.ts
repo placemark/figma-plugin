@@ -1,10 +1,16 @@
 import * as L from "leaflet";
 import GeocoderControl from "leaflet-control-geocoder";
+import { fileOpen } from "browser-fs-access";
+import { check } from "@placemarkio/check-geojson";
 
-const leafletMap = L.map("map", {
+const mapElement = document.getElementById("map")!;
+
+const leafletMap = L.map(mapElement, {
   zoomSnap: 0,
   zoomControl: false,
 }).setView({ lat: 37.500258, lng: -77.49663 }, 15);
+
+const layersControl = L.control.layers({}, {}).addTo(leafletMap);
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution:
@@ -58,8 +64,13 @@ addEventListener("message", (evt) => {
           evt.data.pluginMessage.settings
         )) {
           const input = document.body.querySelector(`[name=${name}]`);
-          if (input && "value" in input) {
-            input.value = value;
+          if (input) {
+            if ("value" in input) {
+              input.value = value;
+            }
+            if ("checked" in input) {
+              input.checked = value === "on";
+            }
           }
         }
       } catch (e) {
@@ -81,12 +92,55 @@ addEventListener("message", (evt) => {
   }
 });
 
+function readFile(file: File): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      resolve(evt.target!.result as string);
+    };
+    reader.readAsText(file);
+  });
+}
+
+document.getElementById("add-overlay")!.onclick = () => {
+  fileOpen({})
+    .then((file) => {
+      return readFile(file).then((contents) => {
+        const geojson = check(contents);
+        const layer = L.geoJson(geojson, {
+          pointToLayer(_geojsonPoint, latlng) {
+            return L.circleMarker(latlng, { radius: 3 });
+          },
+        });
+        (layer as any).name = file.name;
+        layer.addTo(leafletMap);
+        layersControl.addOverlay(layer, file.name);
+      });
+    })
+    .catch((e) => {
+      console.error(e);
+      alert("Failed to add overlay");
+    });
+};
+
 document.getElementById("capture")!.onclick = () => {
+  let overlays: any[] = [];
+
+  leafletMap.eachLayer((layer) => {
+    if (layer instanceof L.GeoJSON) {
+      overlays.push({
+        geojson: layer.toGeoJSON(),
+        name: (layer as any).name,
+      });
+    }
+  });
+
   parent.postMessage(
     {
       pluginMessage: {
         type: "render-map",
         bbox: leafletMap.getBounds().toBBoxString(),
+        overlays,
       },
     },
     "*"
@@ -96,8 +150,8 @@ document.getElementById("capture")!.onclick = () => {
 function setRatio(width: number, height: number) {
   const map = document.getElementById("map")!;
   map.style.height = `${(
-    map.getBoundingClientRect().width * (height / width) +
-    30
+    map.getBoundingClientRect().width *
+    (height / width)
   ).toFixed(3)}px`;
   leafletMap.invalidateSize();
 }

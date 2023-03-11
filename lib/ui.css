@@ -19,6 +19,9 @@ body {
   border: 1px solid var(--figma-color-border, #777);
   border-radius: 4px;
   font-size: 14px;
+  display: flex;
+  align-items: center;
+  gap: 0px 6px;
 }
 
 h2 {
@@ -79,9 +82,12 @@ p {
   justify-content: space-between;
   align-items: center;
   padding: 5px 5px 5px 10px;
+  gap: 0px 8px;
 }
 
 #controls #message {
+  flex: auto;
+  text-align:center;
   text-overflow: truncate;
   font-size: 14px;
 }
