@@ -145,9 +145,15 @@ figma.ui.onmessage = (msg) => {
       render(
         msg.bbox.split(",").map((b: string) => parseFloat(b)),
         { overlays: msg.overlays }
-      ).catch((e) => {
-        progress(e.message, { error: true });
-      });
+      )
+        .catch((e) => {
+          progress(e.message, { error: true });
+        })
+        .finally(() => {
+          figma.ui.postMessage({
+            type: "loaded",
+          });
+        });
     }
   }
 };
@@ -271,6 +277,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     for (const feature of features) {
       drawn++;
       progress(`Drawing (${drawn} / ${features.length} elements)`);
+      await new Promise<void>((resolve) => resolve());
 
       const name = feature.properties?.name;
       switch (feature.geometry.type) {
@@ -432,6 +439,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     const features = grouped.get(group);
     if (!features) continue;
     for (let feature of features) {
+      await new Promise<void>((resolve) => resolve());
       const name = feature.properties?.name;
       if (!(feature.geometry.type === "LineString" && name)) continue;
       if (labeledNames.has(name) || name.length > MAX_NAME_LENGTH) continue;
@@ -549,6 +557,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     const features = grouped.get(group);
     if (!features) continue;
     for (let feature of features) {
+      await new Promise<void>((resolve) => resolve());
       const name = feature.properties?.name;
       if (!(feature.geometry.type === "Polygon" && name)) continue;
       if (labeledNames.has(name) || name.length > MAX_NAME_LENGTH) continue;

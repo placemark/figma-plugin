@@ -10,7 +10,7 @@ const leafletMap = L.map(mapElement, {
   zoomControl: false,
 }).setView({ lat: 37.500258, lng: -77.49663 }, 15);
 
-const layersControl = L.control.layers({}, {}).addTo(leafletMap);
+const layersControl = L.control.layers({}, {});
 
 L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
   attribution:
@@ -53,6 +53,10 @@ leafletMap.on("moveend", () => {
 
 addEventListener("message", (evt) => {
   switch (evt.data?.pluginMessage?.type) {
+    case "loaded": {
+      captureButton.classList.remove("loading");
+      break;
+    }
     case "ratio": {
       const { width, height } = evt.data?.pluginMessage || {};
       setRatio(width, height);
@@ -115,6 +119,8 @@ document.getElementById("add-overlay")!.onclick = () => {
         (layer as any).name = file.name;
         layer.addTo(leafletMap);
         layersControl.addOverlay(layer, file.name);
+        // This is hopefully idempotent
+        layersControl.addTo(leafletMap);
       });
     })
     .catch((e) => {
@@ -123,7 +129,11 @@ document.getElementById("add-overlay")!.onclick = () => {
     });
 };
 
-document.getElementById("capture")!.onclick = () => {
+const captureButton = document.getElementById("capture")!;
+
+captureButton.onclick = () => {
+  captureButton.classList.add("loading");
+
   let overlays: any[] = [];
 
   leafletMap.eachLayer((layer) => {
