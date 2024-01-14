@@ -5,6 +5,7 @@
   "main": "code.js",
   "scripts": {
     "build": "node build.js",
+    "dev": "node build.js",
     "test": "vitest run"
   },
   "author": "Tom MacWright",
@@ -18,6 +19,7 @@
   },
   "dependencies": {
     "@mapbox/geojson-normalize": "^0.0.1",
+    "@mapbox/geojson-rewind": "^0.5.2",
     "@placemarkio/check-geojson": "^0.1.12",
     "@placemarkio/geojson-rewind": "^1.0.2",
     "@types/d3-geo": "^3.0.3",

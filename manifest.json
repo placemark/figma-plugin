@@ -3,8 +3,12 @@
   "id": "1189962635826293304",
   "api": "1.0.0",
   "main": "dist/backend.js",
-  "editorType": [
-    "figma"
-  ],
-  "ui": "dist/ui.html"
+  "editorType": ["figma"],
+  "ui": "dist/ui.html",
+  "networkAccess": {
+    "allowedDomains": [
+      "https://overpass-api.de",
+      "https://tile.openstreetmap.org"
+    ]
+  }
 }

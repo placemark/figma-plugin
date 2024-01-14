@@ -1,5 +1,5 @@
 import { GROUPS, RootObject } from "./types";
-import osmtogeojson from "osmtogeojson";
+import osmtogeojson from "./osmtogeojson";
 import { FeatureCollection, Feature } from "geojson";
 import { getGroup } from "./tags";
 
