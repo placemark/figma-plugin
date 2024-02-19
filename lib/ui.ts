@@ -4,10 +4,10 @@ import { fileOpen } from "browser-fs-access";
 import { check } from "@placemarkio/check-geojson";
 
 const mapElement = document.getElementById("map")!;
+const message = document.getElementById("message")!;
 
 const leafletMap = L.map(mapElement, {
   zoomSnap: 0,
-  zoomControl: false,
 }).setView({ lat: 37.500258, lng: -77.49663 }, 15);
 
 const layersControl = L.control.layers({}, {});
@@ -19,18 +19,27 @@ L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
 
 new GeocoderControl({
   defaultMarkGeocode: false,
+  collapsed: false,
 })
   .on("markgeocode", function (e: any) {
     var bbox = e.geocode.bbox;
     leafletMap.fitBounds(bbox);
   })
   .addTo(leafletMap)
-  .setPosition("topleft");
+  .setPosition("topright");
 
 leafletMap.on("moveend", () => {
   const bbox = leafletMap.getBounds().toBBoxString();
   const center = leafletMap.getCenter();
   const zoom = leafletMap.getZoom();
+
+  if (zoom < 12) {
+    message.textContent =
+      "Recommended to zoom in. This tool does not work for national-level data";
+  } else {
+    message.textContent = "Search or drag to place the map, then click render.";
+  }
+
   parent.postMessage(
     {
       pluginMessage: {
