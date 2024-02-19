@@ -8,7 +8,6 @@ const message = document.getElementById("message")!;
 
 const leafletMap = L.map(mapElement, {
   zoomSnap: 0,
-  zoomControl: false,
 }).setView({ lat: 37.500258, lng: -77.49663 }, 15);
 
 const layersControl = L.control.layers({}, {});
@@ -27,7 +26,7 @@ new GeocoderControl({
     leafletMap.fitBounds(bbox);
   })
   .addTo(leafletMap)
-  .setPosition("topleft");
+  .setPosition("topright");
 
 leafletMap.on("moveend", () => {
   const bbox = leafletMap.getBounds().toBBoxString();
