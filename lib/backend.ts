@@ -2,6 +2,7 @@ import { buildNetwork } from "./network";
 import polylabel from "polylabel";
 import { geoMercator, geoStream } from "d3-geo";
 import { request } from "./request";
+// @ts-expect-error
 import normalize from "@mapbox/geojson-normalize";
 import { rewindFeatureCollection } from "@placemarkio/geojson-rewind";
 import { applyStyle, getStyles } from "./styles";
@@ -192,7 +193,7 @@ async function render(bbox: BBOX, options: Options = {}) {
   const settings = await getSettings();
   let { width, height, x, y } = frame;
   const scaleFactor = width / (bbox[2] - bbox[0]);
-  const { STYLES, labelStyle } = getStyles(!!settings.resetStyles);
+  const { STYLES, labelStyle } = await getStyles(!!settings.resetStyles);
 
   const proj = geoMercator()
     .fitExtent(
@@ -272,7 +273,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
     const vecs = [];
 
-    const style = STYLES[group]();
+    const style = await STYLES[group];
 
     for (const feature of features) {
       drawn++;
@@ -285,7 +286,7 @@ async function render(bbox: BBOX, options: Options = {}) {
         case "LineString":
         case "MultiLineString": {
           const vec = figma.createVector();
-          applyStyle(vec, style, scaleFactor);
+          await applyStyle(vec, style, scaleFactor);
 
           if (name) {
             vec.name = name;
@@ -319,7 +320,7 @@ async function render(bbox: BBOX, options: Options = {}) {
         }
         case "Point": {
           const c = figma.createEllipse();
-          applyStyle(c, style, scaleFactor);
+          await applyStyle(c, style, scaleFactor);
 
           if (feature.properties?.name) {
             c.name = feature.properties.name;
@@ -351,10 +352,10 @@ async function render(bbox: BBOX, options: Options = {}) {
       let data: Array<Array<[number, number]>> = [];
 
       const stream = proj.stream({
-        point(x, y) {
+        async point(x, y) {
           if (context === null) {
             const c = figma.createEllipse();
-            applyStyle(c, STYLES.OverlayPoint(), scaleFactor);
+            await applyStyle(c, await STYLES.OverlayPoint, scaleFactor);
             c.x = x;
             c.y = y;
             figma.currentPage.appendChild(c);
@@ -371,7 +372,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           }
           data.push([]);
         },
-        lineEnd() {
+        async lineEnd() {
           if (context === "POLYGON") {
             return;
           }
@@ -380,7 +381,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
           const vec = figma.createVector();
 
-          applyStyle(vec, STYLES.OverlayLine(), scaleFactor);
+          await applyStyle(vec, await STYLES.OverlayLine, scaleFactor);
 
           vec.vectorPaths = data.map((d) => {
             return {
@@ -396,11 +397,11 @@ async function render(bbox: BBOX, options: Options = {}) {
         polygonStart() {
           context = "POLYGON";
         },
-        polygonEnd() {
+        async polygonEnd() {
           context = null;
           const vec = figma.createVector();
 
-          applyStyle(vec, STYLES.OverlayPolygon(), scaleFactor);
+          await applyStyle(vec, await STYLES.OverlayPolygon, scaleFactor);
 
           vec.vectorPaths = data.map((ring) => {
             ring.push(ring[0]);
@@ -494,7 +495,7 @@ async function render(bbox: BBOX, options: Options = {}) {
       await figma.loadFontAsync(label.fontName as FontName);
       label.characters = name;
       label.fontSize = labelSize;
-      applyStyle(label, labelStyle(), scaleFactor);
+      await applyStyle(label, await labelStyle, scaleFactor);
       label.textAutoResize = "WIDTH_AND_HEIGHT";
       label.textAlignHorizontal = "CENTER";
       label.textAlignVertical = "CENTER";
@@ -567,7 +568,9 @@ async function render(bbox: BBOX, options: Options = {}) {
         continue;
       }
 
-      const point = proj(polylabel(feature.geometry.coordinates) as Pos2);
+      const point = proj(
+        polylabel(feature.geometry.coordinates) as unknown as Pos2
+      );
 
       if (point) {
         if (point[0] > 0 && point[1] > 0) {
@@ -578,7 +581,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           label.textAlignHorizontal = "CENTER";
           label.textAlignVertical = "CENTER";
           label.fontSize = labelSize;
-          applyStyle(label, labelStyle(), scaleFactor);
+          await applyStyle(label, await labelStyle, scaleFactor);
 
           label.x = point[0];
           label.y = point[1];
