@@ -274,10 +274,10 @@ export async function applyStyle(
   scaleFactor: number
 ) {
   if (style.fillStyleId) {
-    vec.setFillStyleIdAsync(style.fillStyleId);
+    await vec.setFillStyleIdAsync(style.fillStyleId);
   }
   if (style.strokeStyleId) {
-    vec.setStrokeStyleIdAsync(style.strokeStyleId);
+    await vec.setStrokeStyleIdAsync(style.strokeStyleId);
   }
   if (style.dashPattern) {
     vec.dashPattern = style.dashPattern.map((d) => d * (scaleFactor * 0.00002));

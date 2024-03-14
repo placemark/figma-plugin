@@ -104,7 +104,7 @@ if (attached) {
     }
   } catch (e) {}
 } else {
-  figma.clientStorage.getAsync(STORAGE_KEY).then((stored) => {
+  void figma.clientStorage.getAsync(STORAGE_KEY).then((stored) => {
     if (stored) {
       figma.ui.postMessage({
         type: "recover-viewport",
@@ -114,7 +114,7 @@ if (attached) {
   });
 }
 
-figma.clientStorage.getAsync("settings").then((settings) => {
+void figma.clientStorage.getAsync("settings").then((settings) => {
   if (settings) {
     figma.ui.postMessage({
       type: "settings",
@@ -130,11 +130,11 @@ figma.ui.onmessage = (msg) => {
       break;
     }
     case "save-viewport": {
-      figma.clientStorage.setAsync(STORAGE_KEY, msg.bbox);
+      void figma.clientStorage.setAsync(STORAGE_KEY, msg.bbox);
       break;
     }
     case "setting": {
-      figma.clientStorage.getAsync("settings").then((settings) => {
+      void figma.clientStorage.getAsync("settings").then((settings) => {
         if (!settings) settings = {};
         settings[msg.name] = msg.value;
         return figma.clientStorage.setAsync("settings", settings);
@@ -361,10 +361,10 @@ async function render(bbox: BBOX, options: Options = {}) {
       let data: Array<Array<[number, number]>> = [];
 
       const stream = proj.stream({
-        async point(x, y) {
+        point(x, y) {
           if (context === null) {
             const c = figma.createEllipse();
-            await applyStyle(c, STYLES.OverlayPoint, scaleFactor);
+            void applyStyle(c, STYLES.OverlayPoint, scaleFactor);
             c.x = x;
             c.y = y;
             figma.currentPage.appendChild(c);
@@ -381,7 +381,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           }
           data.push([]);
         },
-        async lineEnd() {
+        lineEnd() {
           if (context === "POLYGON") {
             return;
           }
@@ -390,7 +390,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
           const vec = figma.createVector();
 
-          await applyStyle(vec, STYLES.OverlayLine, scaleFactor);
+          void applyStyle(vec, STYLES.OverlayLine, scaleFactor);
 
           vec.vectorPaths = data.map((d) => {
             return {
@@ -406,11 +406,11 @@ async function render(bbox: BBOX, options: Options = {}) {
         polygonStart() {
           context = "POLYGON";
         },
-        async polygonEnd() {
+        polygonEnd() {
           context = null;
           const vec = figma.createVector();
 
-          await applyStyle(vec, STYLES.OverlayPolygon, scaleFactor);
+          void applyStyle(vec, STYLES.OverlayPolygon, scaleFactor);
 
           vec.vectorPaths = data.map((ring) => {
             ring.push(ring[0]);
@@ -592,7 +592,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           label.textAlignHorizontal = "CENTER";
           label.textAlignVertical = "CENTER";
           label.fontSize = labelSize;
-          await applyStyle(label, await labelStyle, scaleFactor);
+          await applyStyle(label, labelStyle, scaleFactor);
 
           label.x = point[0];
           label.y = point[1];
@@ -646,7 +646,7 @@ async function createAttribution(frame: FrameNode) {
 }
 
 function clear() {
-  for (const child of (frame as FrameNode).children) {
+  for (const child of frame.children) {
     child.remove();
   }
 }
