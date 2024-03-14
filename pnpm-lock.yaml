@@ -56,9 +56,6 @@ dependencies:
   osmtogeojson:
     specifier: 3.0.0-beta.5
     version: 3.0.0-beta.5
-  p-lazy:
-    specifier: ^4.0.0
-    version: 4.0.0
   polylabel:
     specifier: ^1.1.0
     version: 1.1.0
@@ -1974,11 +1971,6 @@ packages:
       tiny-osmpbf: 0.1.0
     optionalDependencies:
       '@types/geojson': 7946.0.14
-    dev: false
-
-  /p-lazy@4.0.0:
-    resolution: {integrity: sha512-8lIogVWwqBkiBy4FpylVHLalB9dZ25B2zBdY4OGGknDPWB7ehf2jyxmbh8z3MZsfbERLNU266h9Yx3cxHn3lFg==}
-    engines: {node: '>=12'}
     dev: false
 
   /p-limit@3.1.0:

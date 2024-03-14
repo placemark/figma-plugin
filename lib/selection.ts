@@ -10,7 +10,7 @@ const DEPTH_LIMIT = 100;
  */
 export function getMaybeParentFrame(sel: SceneNode) {
   if (sel && sel?.type !== "FRAME") {
-    let parents = [];
+    const parents = [];
     let parent = sel.parent;
     let depth = 0;
 
@@ -22,7 +22,7 @@ export function getMaybeParentFrame(sel: SceneNode) {
       }
     }
 
-    for (let parent of parents) {
+    for (const parent of parents) {
       if (parent.type === "FRAME" && parent.getPluginData(ATTACHED_KEY)) {
         return parent;
       }

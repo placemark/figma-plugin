@@ -39,7 +39,6 @@
     "leaflet-control-geocoder": "^2.4.0",
     "linelabel": "^0.1.1",
     "osmtogeojson": "3.0.0-beta.5",
-    "p-lazy": "^4.0.0",
     "polylabel": "^1.1.0",
     "rbush": "^3.0.1"
   }

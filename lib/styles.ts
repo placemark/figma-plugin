@@ -1,5 +1,4 @@
 import { GROUPS } from "./types";
-import PLazy from "p-lazy";
 
 interface Style {
   fillStyleId?: string;
@@ -24,7 +23,7 @@ export const getStyles = async (reset: boolean) => {
   ) {
     const styles = await figma.getLocalPaintStylesAsync();
 
-    let existing = styles.find((style) => {
+    const existing = styles.find((style) => {
       return style.name === name;
     });
     if (existing) {
@@ -47,8 +46,8 @@ export const getStyles = async (reset: boolean) => {
     return style;
   }
 
-  // TODO: why did this have to be wrapped in new PLazy(async )?
-  const labelStyle = new PLazy<Style>(async () => {
+  // TODO: why did this have to be wrapped in (async )?
+  const labelStyle = await (async () => {
     const fillStyle = await createColorPaint255("Label fill", [0, 0, 0]);
     const strokeStyle = await createColorPaint255(
       "Label stroke",
@@ -59,10 +58,10 @@ export const getStyles = async (reset: boolean) => {
       strokeStyleId: strokeStyle.id,
       strokeWeight: 1,
     };
-  });
+  })();
 
-  const STYLES: Record<GROUPS, Promise<Style>> = {
-    [GROUPS.Building]: new PLazy(async () => {
+  const STYLES: Record<GROUPS, Style> = {
+    [GROUPS.Building]: await (async () => {
       const fillStyle = await createColorPaint(
         "Building fill",
         [0.8, 0.8, 0.8]
@@ -76,8 +75,8 @@ export const getStyles = async (reset: boolean) => {
         strokeStyleId: strokeStyle.id,
         strokeWeight: 0.5,
       };
-    }),
-    [GROUPS.OverlayPolygon]: new PLazy(async () => {
+    })(),
+    [GROUPS.OverlayPolygon]: await (async () => {
       const fillStyle = await createColorPaint(
         "Polygon fill",
         [0.0, 0.9, 0.9],
@@ -92,8 +91,8 @@ export const getStyles = async (reset: boolean) => {
         strokeStyleId: strokeStyle.id,
         strokeWeight: 1,
       };
-    }),
-    [GROUPS.OverlayLine]: new PLazy(async () => {
+    })(),
+    [GROUPS.OverlayLine]: await (async () => {
       const strokeStyle = await createColorPaint255(
         "Line stroke",
         [0, 200, 200]
@@ -102,8 +101,8 @@ export const getStyles = async (reset: boolean) => {
         strokeStyleId: strokeStyle.id,
         strokeWeight: 4,
       };
-    }),
-    [GROUPS.OverlayPoint]: new PLazy(async () => {
+    })(),
+    [GROUPS.OverlayPoint]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Overlay point",
         [50, 50, 50]
@@ -113,16 +112,16 @@ export const getStyles = async (reset: boolean) => {
         radius: 4,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Tree]: new PLazy(async () => {
+    })(),
+    [GROUPS.Tree]: await (async () => {
       const fillStyle = await createColorPaint255("Tree fill", [157, 219, 150]);
       return {
         fillStyleId: fillStyle.id,
         radius: 2,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.University]: new PLazy(async () => {
+    })(),
+    [GROUPS.University]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Education spaces",
         [254, 255, 230]
@@ -131,8 +130,8 @@ export const getStyles = async (reset: boolean) => {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Industrial]: new PLazy(async () => {
+    })(),
+    [GROUPS.Industrial]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Industrial",
         [236, 219, 233]
@@ -141,8 +140,8 @@ export const getStyles = async (reset: boolean) => {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Commercial]: new PLazy(async () => {
+    })(),
+    [GROUPS.Commercial]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Commercial",
         [243, 217, 217]
@@ -151,8 +150,8 @@ export const getStyles = async (reset: boolean) => {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Residential]: new PLazy(async () => {
+    })(),
+    [GROUPS.Residential]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Residential areas",
         [225, 225, 225]
@@ -161,15 +160,15 @@ export const getStyles = async (reset: boolean) => {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Wood]: new PLazy(async () => {
+    })(),
+    [GROUPS.Wood]: await (async () => {
       const fillStyle = await createColorPaint255("Wood fill", [174, 209, 159]);
       return {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Pitch]: new PLazy(async () => {
+    })(),
+    [GROUPS.Pitch]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Pitch fill",
         [170, 224, 203]
@@ -178,15 +177,15 @@ export const getStyles = async (reset: boolean) => {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Park]: new PLazy(async () => {
+    })(),
+    [GROUPS.Park]: await (async () => {
       const fillStyle = await createColorPaint255("Park fill", [190, 253, 200]);
       return {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.WaterLine]: new PLazy(async () => {
+    })(),
+    [GROUPS.WaterLine]: await (async () => {
       const fillStyle = await createColorPaint(
         "Water line stroke",
         [0.7, 0.7, 0.9]
@@ -195,8 +194,8 @@ export const getStyles = async (reset: boolean) => {
         strokeStyleId: fillStyle.id,
         strokeWeight: 2,
       };
-    }),
-    [GROUPS.WaterArea]: new PLazy(async () => {
+    })(),
+    [GROUPS.WaterArea]: await (async () => {
       const fillStyle = await createColorPaint(
         "Water area fill",
         [0.7, 0.7, 0.9]
@@ -205,8 +204,8 @@ export const getStyles = async (reset: boolean) => {
         fillStyleId: fillStyle.id,
         strokeWeight: 0,
       };
-    }),
-    [GROUPS.Water]: new PLazy(async () => {
+    })(),
+    [GROUPS.Water]: await (async () => {
       const fillStyle = await createColorPaint(
         "Water area stroke",
         [0.7, 0.7, 0.9]
@@ -215,8 +214,8 @@ export const getStyles = async (reset: boolean) => {
         strokeStyleId: fillStyle.id,
         strokeWeight: 4,
       };
-    }),
-    [GROUPS.TrafficRoadMajor]: new PLazy(async () => {
+    })(),
+    [GROUPS.TrafficRoadMajor]: await (async () => {
       const strokeStyle = await createColorPaint255(
         "Traffic road major",
         [252, 214, 164]
@@ -225,8 +224,8 @@ export const getStyles = async (reset: boolean) => {
         strokeStyleId: strokeStyle.id,
         strokeWeight: 5,
       };
-    }),
-    [GROUPS.TrafficRoadSupermajor]: new PLazy(async () => {
+    })(),
+    [GROUPS.TrafficRoadSupermajor]: await (async () => {
       const strokeStyle = await createColorPaint255(
         "Traffic road super-major",
         [232, 146, 162]
@@ -235,36 +234,36 @@ export const getStyles = async (reset: boolean) => {
         strokeStyleId: strokeStyle.id,
         strokeWeight: 6,
       };
-    }),
-    [GROUPS.TrafficRoad]: new PLazy(async () => {
+    })(),
+    [GROUPS.TrafficRoad]: await (async () => {
       const fillStyle = await createColorPaint("Traffic road", [0.6, 0.6, 0.6]);
       return {
         strokeStyleId: fillStyle.id,
         strokeWeight: 2,
       };
-    }),
-    [GROUPS.ServiceRoad]: new PLazy(async () => {
+    })(),
+    [GROUPS.ServiceRoad]: await (async () => {
       const fillStyle = await createColorPaint("Service road", [0.7, 0.6, 0.6]);
       return {
         strokeStyleId: fillStyle.id,
         strokeWeight: 1,
       };
-    }),
-    [GROUPS.Rail]: new PLazy(async () => {
+    })(),
+    [GROUPS.Rail]: await (async () => {
       const strokeStyle = await createColorPaint("Rail", [0.5, 0.6, 0.8]);
       return {
         strokeStyleId: strokeStyle.id,
         strokeWeight: 1,
       };
-    }),
-    [GROUPS.Path]: new PLazy(async () => {
+    })(),
+    [GROUPS.Path]: await (async () => {
       const strokeStyle = await createColorPaint("Path", [0.6, 0.6, 0.6]);
       return {
         strokeStyleId: strokeStyle.id,
         dashPattern: [2, 1],
         strokeWeight: 0.5,
       };
-    }),
+    })(),
   };
   return { STYLES, labelStyle };
 };

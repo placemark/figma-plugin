@@ -11,5 +11,6 @@
       "https://nominatim.openstreetmap.org"
     ]
   },
+  "documentAccess": "dynamic-page",
   "ui": "dist/ui.html"
 }

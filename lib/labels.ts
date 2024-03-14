@@ -1,5 +1,5 @@
 // Based on iD https://github.com/openstreetmap/iD/blob/develop/modules/svg/labels.js#L29
-const labelStack = [
+export const labelStack = [
   ["LineString", "aeroway", "*", 12],
   ["LineString", "highway", "motorway", 12],
   ["LineString", "highway", "trunk", 12],
