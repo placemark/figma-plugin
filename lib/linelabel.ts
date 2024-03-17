@@ -13,23 +13,23 @@ export const linelabel = (
   pts: Pos2[],
   targetLen: number
 ): LabelableSegment[] => {
-  let max_angle_delta: number = Math.PI / 45;
-  var chunks = [];
-  var a,
+  const max_angle_delta: number = Math.PI / 45;
+  const chunks = [];
+  let a,
     b,
     c,
     i = 0,
     n = 0,
     d = 0;
-  var abmag = 0,
+  let abmag = 0,
     bcmag = 0;
-  var abx = 0,
+  let abx = 0,
     aby = 0;
-  var bcx = 0,
+  let bcx = 0,
     bcy = 0;
-  var dt = 0;
-  var i_start = 0;
-  var d_start = 0;
+  let dt = 0;
+  let i_start = 0;
+  let d_start = 0;
 
   if (pts.length < 2) return [];
   if (pts.length === 2) {

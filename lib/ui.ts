@@ -22,7 +22,7 @@ new GeocoderControl({
   collapsed: false,
 })
   .on("markgeocode", function (e: any) {
-    var bbox = e.geocode.bbox;
+    const bbox = e.geocode.bbox;
     leafletMap.fitBounds(bbox);
   })
   .addTo(leafletMap)
@@ -143,7 +143,7 @@ const captureButton = document.getElementById("capture")!;
 captureButton.onclick = () => {
   captureButton.classList.add("loading");
 
-  let overlays: any[] = [];
+  const overlays: any[] = [];
 
   leafletMap.eachLayer((layer) => {
     if (layer instanceof L.GeoJSON) {

@@ -2,6 +2,7 @@ import { buildNetwork } from "./network";
 import polylabel from "polylabel";
 import { geoMercator, geoStream } from "d3-geo";
 import { request } from "./request";
+// @ts-expect-error this doesn't have types
 import normalize from "@mapbox/geojson-normalize";
 import { rewindFeatureCollection } from "@placemarkio/geojson-rewind";
 import { applyStyle, getStyles } from "./styles";
@@ -20,6 +21,7 @@ import RBush from "rbush";
 import { LabelableSegment, linelabel } from "./linelabel";
 import { centerSort } from "./center_sort";
 
+/*
 function rewindRing(ring: Position[], dir: boolean) {
   var area = 0,
     err = 0;
@@ -32,6 +34,7 @@ function rewindRing(ring: Position[], dir: boolean) {
   if (area + err >= 0 !== !!dir) ring.reverse();
   return ring;
 }
+*/
 
 // Don't show very long labels.
 const MAX_NAME_LENGTH = 20;
@@ -40,18 +43,20 @@ const MAX_NAME_LENGTH = 20;
 const AREA_RATIO_CUTOFF = 80;
 const R2D = 180 / Math.PI;
 
+/*
 type Overlay = {
   name: string;
   geojson: any;
 };
+*/
 
 type IAttachedData = {
   version: 1;
   bbox: string;
 };
 
-let frame = (() => {
-  let sel = figma.currentPage.selection[0];
+const frame = (() => {
+  const sel = figma.currentPage.selection[0];
 
   if (sel?.type === "FRAME") {
     return sel;
@@ -66,7 +71,7 @@ let frame = (() => {
     return parentSel;
   }
 
-  let frame = figma.createFrame();
+  const frame = figma.createFrame();
   frame.name = "Placemark Map";
   frame.resize(720, 360);
   figma.viewport.scrollAndZoomIntoView([frame]);
@@ -99,7 +104,7 @@ if (attached) {
     }
   } catch (e) {}
 } else {
-  figma.clientStorage.getAsync(STORAGE_KEY).then((stored) => {
+  void figma.clientStorage.getAsync(STORAGE_KEY).then((stored) => {
     if (stored) {
       figma.ui.postMessage({
         type: "recover-viewport",
@@ -109,7 +114,7 @@ if (attached) {
   });
 }
 
-figma.clientStorage.getAsync("settings").then((settings) => {
+void figma.clientStorage.getAsync("settings").then((settings) => {
   if (settings) {
     figma.ui.postMessage({
       type: "settings",
@@ -125,11 +130,11 @@ figma.ui.onmessage = (msg) => {
       break;
     }
     case "save-viewport": {
-      figma.clientStorage.setAsync(STORAGE_KEY, msg.bbox);
+      void figma.clientStorage.setAsync(STORAGE_KEY, msg.bbox);
       break;
     }
     case "setting": {
-      figma.clientStorage.getAsync("settings").then((settings) => {
+      void figma.clientStorage.getAsync("settings").then((settings) => {
         if (!settings) settings = {};
         settings[msg.name] = msg.value;
         return figma.clientStorage.setAsync("settings", settings);
@@ -190,9 +195,11 @@ interface Options {
 async function render(bbox: BBOX, options: Options = {}) {
   const overlays = options?.overlays || [];
   const settings = await getSettings();
-  let { width, height, x, y } = frame;
+  const { width, height, x, y } = frame;
   const scaleFactor = width / (bbox[2] - bbox[0]);
-  const { STYLES, labelStyle } = getStyles(!!settings.resetStyles);
+  const { STYLES, labelStyle } = await getStyles(!!settings.resetStyles);
+
+  console.log("Got styles, rendering now");
 
   const proj = geoMercator()
     .fitExtent(
@@ -269,15 +276,18 @@ async function render(bbox: BBOX, options: Options = {}) {
   for (const group of GROUP_ORDER) {
     const features = grouped.get(group);
     if (!features) continue;
+    console.log(`Rendering ${group} (${features.length} features)`);
 
     const vecs = [];
 
-    const style = STYLES[group]();
+    const style = STYLES[group];
 
     for (const feature of features) {
       drawn++;
-      progress(`Drawing (${drawn} / ${features.length} elements)`);
-      await new Promise<void>((resolve) => resolve());
+      progress(
+        `Drawing (${drawn} / ${features.length} elements), ${feature.geometry.type}`
+      );
+      // await new Promise<void>((resolve) => resolve());
 
       const name = feature.properties?.name;
       switch (feature.geometry.type) {
@@ -285,7 +295,7 @@ async function render(bbox: BBOX, options: Options = {}) {
         case "LineString":
         case "MultiLineString": {
           const vec = figma.createVector();
-          applyStyle(vec, style, scaleFactor);
+          await applyStyle(vec, style, scaleFactor);
 
           if (name) {
             vec.name = name;
@@ -319,7 +329,7 @@ async function render(bbox: BBOX, options: Options = {}) {
         }
         case "Point": {
           const c = figma.createEllipse();
-          applyStyle(c, style, scaleFactor);
+          await applyStyle(c, style, scaleFactor);
 
           if (feature.properties?.name) {
             c.name = feature.properties.name;
@@ -354,7 +364,7 @@ async function render(bbox: BBOX, options: Options = {}) {
         point(x, y) {
           if (context === null) {
             const c = figma.createEllipse();
-            applyStyle(c, STYLES.OverlayPoint(), scaleFactor);
+            void applyStyle(c, STYLES.OverlayPoint, scaleFactor);
             c.x = x;
             c.y = y;
             figma.currentPage.appendChild(c);
@@ -380,7 +390,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
           const vec = figma.createVector();
 
-          applyStyle(vec, STYLES.OverlayLine(), scaleFactor);
+          void applyStyle(vec, STYLES.OverlayLine, scaleFactor);
 
           vec.vectorPaths = data.map((d) => {
             return {
@@ -400,7 +410,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           context = null;
           const vec = figma.createVector();
 
-          applyStyle(vec, STYLES.OverlayPolygon(), scaleFactor);
+          void applyStyle(vec, STYLES.OverlayPolygon, scaleFactor);
 
           vec.vectorPaths = data.map((ring) => {
             ring.push(ring[0]);
@@ -433,12 +443,12 @@ async function render(bbox: BBOX, options: Options = {}) {
     progress("Failed to draw overlays", { error: true });
   }
 
-  let labeledNames = new Set<string>();
+  const labeledNames = new Set<string>();
 
   for (const group of GROUP_LABEL_ORDER) {
     const features = grouped.get(group);
     if (!features) continue;
-    for (let feature of features) {
+    for (const feature of features) {
       await new Promise<void>((resolve) => resolve());
       const name = feature.properties?.name;
       if (!(feature.geometry.type === "LineString" && name)) continue;
@@ -494,12 +504,12 @@ async function render(bbox: BBOX, options: Options = {}) {
       await figma.loadFontAsync(label.fontName as FontName);
       label.characters = name;
       label.fontSize = labelSize;
-      applyStyle(label, labelStyle(), scaleFactor);
+      await applyStyle(label, labelStyle, scaleFactor);
       label.textAutoResize = "WIDTH_AND_HEIGHT";
       label.textAlignHorizontal = "CENTER";
       label.textAlignVertical = "CENTER";
       figma.currentPage.appendChild(label);
-      let initialHeight = label.height;
+      const initialHeight = label.height;
 
       /**
        * We use this as a lazy way to keep track of whether
@@ -509,7 +519,7 @@ async function render(bbox: BBOX, options: Options = {}) {
       let foundPosition = false;
 
       // Try each possible position.
-      for (let segment of labelPositions) {
+      for (const segment of labelPositions) {
         const { rotation, x, y, width } = getLabelParameters(segment);
 
         // Bail if this label is outside of the canvas.
@@ -549,6 +559,8 @@ async function render(bbox: BBOX, options: Options = {}) {
 
   const frameArea = frame.width * frame.height;
 
+  console.log("Rendering group labels");
+
   /**
    * All lines have been labeled: now try to label areas,
    * if we can.
@@ -556,7 +568,7 @@ async function render(bbox: BBOX, options: Options = {}) {
   for (const group of GROUP_AREA_LABEL_ORDER) {
     const features = grouped.get(group);
     if (!features) continue;
-    for (let feature of features) {
+    for (const feature of features) {
       await new Promise<void>((resolve) => resolve());
       const name = feature.properties?.name;
       if (!(feature.geometry.type === "Polygon" && name)) continue;
@@ -567,7 +579,9 @@ async function render(bbox: BBOX, options: Options = {}) {
         continue;
       }
 
-      const point = proj(polylabel(feature.geometry.coordinates) as Pos2);
+      const point = proj(
+        polylabel(feature.geometry.coordinates) as unknown as Pos2
+      );
 
       if (point) {
         if (point[0] > 0 && point[1] > 0) {
@@ -578,7 +592,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           label.textAlignHorizontal = "CENTER";
           label.textAlignVertical = "CENTER";
           label.fontSize = labelSize;
-          applyStyle(label, labelStyle(), scaleFactor);
+          await applyStyle(label, labelStyle, scaleFactor);
 
           label.x = point[0];
           label.y = point[1];
@@ -612,6 +626,8 @@ async function render(bbox: BBOX, options: Options = {}) {
     figmaGroup.name = "Labels";
   }
 
+  console.log("Done?");
+
   progress(`Writing attribution`);
 
   await createAttribution(frame);
@@ -630,7 +646,7 @@ async function createAttribution(frame: FrameNode) {
 }
 
 function clear() {
-  for (const child of (frame as FrameNode).children) {
+  for (const child of frame.children) {
     child.remove();
   }
 }

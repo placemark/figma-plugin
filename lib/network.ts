@@ -7,7 +7,7 @@ export function buildNetwork(j: RootObject) {
   const geojson: FeatureCollection = osmtogeojson(j);
   const grouped: Map<GROUPS, Feature[]> = new Map();
 
-  for (let feature of geojson.features) {
+  for (const feature of geojson.features) {
     const group = getGroup(feature);
 
     if (group) {

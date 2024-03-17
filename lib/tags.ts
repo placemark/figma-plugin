@@ -1,4 +1,4 @@
-import { Feature, GeoJsonProperties } from "geojson";
+import { Feature } from "geojson";
 import { GROUPS, Tags } from "./types";
 
 /**

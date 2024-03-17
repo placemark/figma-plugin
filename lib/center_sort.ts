@@ -13,7 +13,7 @@ export function centerSort<T>(array: T[]) {
   const left = array.slice(0, centerIndex);
   const right = array.slice(centerIndex).reverse();
 
-  let output: T[] = [];
+  const output: T[] = [];
 
   while (left.length || right.length) {
     if (right.length) {
