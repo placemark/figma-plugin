@@ -7,6 +7,8 @@ export async function request(bbox: [number, number, number, number]) {
 
   const query = `[out:json][timeout:30];(node(${bboxString});<;node(w););out;`;
 
+  console.log("OVERPASS QUERY:", query);
+
   const res = await fetch(
     `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
     {
@@ -16,7 +18,7 @@ export async function request(bbox: [number, number, number, number]) {
       headersObject: {
         Accept: "application/json",
       },
-    } as unknown as RequestInit
+    } as unknown as RequestInit,
   );
 
   progress("Getting text");

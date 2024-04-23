@@ -20,7 +20,7 @@ export function buildNetwork(j: RootObject) {
                 type: "Polygon",
                 coordinates,
               },
-            })
+            }),
           );
         }
       } else {

@@ -11,7 +11,7 @@ interface Style {
 export const getStyles = async (reset: boolean) => {
   async function createColorPaint255(
     name: string,
-    [r, g, b]: [number, number, number]
+    [r, g, b]: [number, number, number],
   ) {
     return createColorPaint(name, [r / 255, g / 255, b / 255]);
   }
@@ -19,7 +19,7 @@ export const getStyles = async (reset: boolean) => {
   async function createColorPaint(
     name: string,
     [r, g, b]: [number, number, number],
-    opacity = 1
+    opacity = 1,
   ) {
     const styles = await figma.getLocalPaintStylesAsync();
 
@@ -51,7 +51,7 @@ export const getStyles = async (reset: boolean) => {
     const fillStyle = await createColorPaint255("Label fill", [0, 0, 0]);
     const strokeStyle = await createColorPaint255(
       "Label stroke",
-      [255, 255, 255]
+      [255, 255, 255],
     );
     return {
       fillStyleId: fillStyle.id,
@@ -64,11 +64,11 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.Building]: await (async () => {
       const fillStyle = await createColorPaint(
         "Building fill",
-        [0.8, 0.8, 0.8]
+        [0.8, 0.8, 0.8],
       );
       const strokeStyle = await createColorPaint(
         "Building stroke",
-        [0.7, 0.7, 0.7]
+        [0.7, 0.7, 0.7],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -80,11 +80,11 @@ export const getStyles = async (reset: boolean) => {
       const fillStyle = await createColorPaint(
         "Polygon fill",
         [0.0, 0.9, 0.9],
-        0.5
+        0.5,
       );
       const strokeStyle = await createColorPaint(
         "Polygon stroke",
-        [0.0, 0.5, 0.5]
+        [0.0, 0.5, 0.5],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -95,7 +95,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.OverlayLine]: await (async () => {
       const strokeStyle = await createColorPaint255(
         "Line stroke",
-        [0, 200, 200]
+        [0, 200, 200],
       );
       return {
         strokeStyleId: strokeStyle.id,
@@ -105,7 +105,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.OverlayPoint]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Overlay point",
-        [50, 50, 50]
+        [50, 50, 50],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -124,7 +124,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.University]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Education spaces",
-        [254, 255, 230]
+        [254, 255, 230],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -134,7 +134,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.Industrial]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Industrial",
-        [236, 219, 233]
+        [236, 219, 233],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -144,7 +144,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.Commercial]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Commercial",
-        [243, 217, 217]
+        [243, 217, 217],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -154,7 +154,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.Residential]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Residential areas",
-        [225, 225, 225]
+        [225, 225, 225],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -171,7 +171,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.Pitch]: await (async () => {
       const fillStyle = await createColorPaint255(
         "Pitch fill",
-        [170, 224, 203]
+        [170, 224, 203],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -188,17 +188,24 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.WaterLine]: await (async () => {
       const fillStyle = await createColorPaint(
         "Water line stroke",
-        [0.7, 0.7, 0.9]
+        [0.7, 0.7, 0.9],
       );
       return {
         strokeStyleId: fillStyle.id,
         strokeWeight: 2,
       };
     })(),
+    [GROUPS.Sea]: await (async () => {
+      const fillStyle = await createColorPaint("Sea fill", [0.7, 0.7, 0.9]);
+      return {
+        fillStyleId: fillStyle.id,
+        strokeWeight: 0,
+      };
+    })(),
     [GROUPS.WaterArea]: await (async () => {
       const fillStyle = await createColorPaint(
         "Water area fill",
-        [0.7, 0.7, 0.9]
+        [0.7, 0.7, 0.9],
       );
       return {
         fillStyleId: fillStyle.id,
@@ -208,7 +215,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.Water]: await (async () => {
       const fillStyle = await createColorPaint(
         "Water area stroke",
-        [0.7, 0.7, 0.9]
+        [0.7, 0.7, 0.9],
       );
       return {
         strokeStyleId: fillStyle.id,
@@ -218,7 +225,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.TrafficRoadMajor]: await (async () => {
       const strokeStyle = await createColorPaint255(
         "Traffic road major",
-        [252, 214, 164]
+        [252, 214, 164],
       );
       return {
         strokeStyleId: strokeStyle.id,
@@ -228,7 +235,7 @@ export const getStyles = async (reset: boolean) => {
     [GROUPS.TrafficRoadSupermajor]: await (async () => {
       const strokeStyle = await createColorPaint255(
         "Traffic road super-major",
-        [232, 146, 162]
+        [232, 146, 162],
       );
       return {
         strokeStyleId: strokeStyle.id,
@@ -271,7 +278,7 @@ export const getStyles = async (reset: boolean) => {
 export async function applyStyle(
   vec: VectorNode | EllipseNode | TextNode,
   style: Style,
-  scaleFactor: number
+  scaleFactor: number,
 ) {
   if (style.fillStyleId) {
     await vec.setFillStyleIdAsync(style.fillStyleId);
@@ -289,7 +296,7 @@ export async function applyStyle(
       vec.strokeJoin = "ROUND";
       vec.strokeWeight = Math.max(
         1,
-        style.strokeWeight * (scaleFactor * 0.000002)
+        style.strokeWeight * (scaleFactor * 0.000002),
       );
     } else {
       vec.strokeJoin = "ROUND";

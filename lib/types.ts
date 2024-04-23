@@ -78,6 +78,7 @@ export enum GROUPS {
   Path = "Path",
   Water = "Water",
   WaterLine = "Water lines",
+  Sea = "Sea",
   WaterArea = "Water area",
   Building = "Building",
   University = "University",
@@ -89,6 +90,7 @@ export enum GROUPS {
  * From bottom to top
  */
 export const GROUP_ORDER = [
+  GROUPS.Sea,
   GROUPS.University,
   GROUPS.Industrial,
   GROUPS.Commercial,

@@ -10,7 +10,7 @@ It's similar in spirit, technically, to the renderer in [iD](https://github.com/
 but much simpler.
 
 |                                   | **placemark** | **mapbox-based plugins**         |
-|-----------------------------------|---------------|----------------------------------|
+| --------------------------------- | ------------- | -------------------------------- |
 | edit map styles                   | in figma      | in mapbox studio                 |
 | scales supported                  | local only    | all scales, global to local      |
 | street labeling                   | not yet       | yes                              |
@@ -29,3 +29,11 @@ to Plugins → Development → Import plugin from manifest…
 
 Create an empty frame in Figma. With it selected, start the Placemark plugin.
 Select an area, click **Render**.
+
+## Water
+
+Download [Daylight coastline distribution](https://daylightmap.org/coastlines.html).
+
+```
+ogr2ogr water_polygons.pmtiles water_polygons.shp -dsco MINZOOM=3 -dsco MAXZOOM=4
+```

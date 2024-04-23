@@ -8,6 +8,7 @@ import { rewindFeatureCollection } from "@placemarkio/geojson-rewind";
 import { applyStyle, getStyles } from "./styles";
 import {
   BBOX,
+  GROUPS,
   GROUP_AREA_LABEL_ORDER,
   GROUP_LABEL_ORDER,
   GROUP_ORDER,
@@ -16,10 +17,11 @@ import {
 import { progress } from "./progress";
 import { STORAGE_KEY, ATTACHED_KEY } from "./constants";
 import { getMaybeParentFrame } from "./selection";
-import { Position } from "geojson";
+import { Feature, Position } from "geojson";
 import RBush from "rbush";
 import { LabelableSegment, linelabel } from "./linelabel";
 import { centerSort } from "./center_sort";
+import { pointToTile } from "./tilebelt";
 
 /*
 function rewindRing(ring: Position[], dir: boolean) {
@@ -149,7 +151,7 @@ figma.ui.onmessage = (msg) => {
       frame.setPluginData(ATTACHED_KEY, JSON.stringify(attached));
       render(
         msg.bbox.split(",").map((b: string) => parseFloat(b)),
-        { overlays: msg.overlays }
+        { overlays: msg.overlays },
       )
         .catch((e) => {
           progress(e.message, { error: true });
@@ -192,6 +194,21 @@ interface Options {
   overlays?: any[];
 }
 
+function getTileCover(bbox: BBOX, z: number) {
+  const tl = pointToTile(bbox[0], bbox[1], z);
+  const br = pointToTile(bbox[2], bbox[3], z);
+
+  const tiles = [];
+
+  for (let x = tl[0]; x <= br[0]; x++) {
+    for (let y = tl[1]; y <= br[1]; y++) {
+      tiles.push([x, y, z]);
+    }
+  }
+
+  return tiles;
+}
+
 async function render(bbox: BBOX, options: Options = {}) {
   const overlays = options?.overlays || [];
   const settings = await getSettings();
@@ -200,6 +217,26 @@ async function render(bbox: BBOX, options: Options = {}) {
   const { STYLES, labelStyle } = await getStyles(!!settings.resetStyles);
 
   console.log("Got styles, rendering now");
+
+  const tileCover = getTileCover(bbox, 3);
+
+  progress("Filling oceans");
+  const water = (
+    await Promise.all(
+      tileCover.map(async (tile) => {
+        const resp = await fetch(
+          `https://tmcw-water.web.val.run/${tile[2]}/${tile[0]}/${tile[1]}`,
+        );
+        const fc = await resp.json();
+        return fc.features as Feature[];
+      }),
+    )
+  )
+    // @ts-expect-error this does exist for Figma
+    .flat();
+
+  console.log(water);
+  progress("Building network");
 
   const proj = geoMercator()
     .fitExtent(
@@ -213,7 +250,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           [bbox[0], bbox[1]],
           [bbox[2], bbox[3]],
         ],
-      }
+      },
     )
     .clipExtent([
       [x - 100, y - 100],
@@ -228,6 +265,8 @@ async function render(bbox: BBOX, options: Options = {}) {
   const grouped = buildNetwork(j);
   progress("Creating frame");
 
+  grouped.set(GROUPS.Sea, water);
+
   let drawn = 0;
 
   clear();
@@ -240,7 +279,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     return ring
       .map(
         (position, i) =>
-          `${i === 0 ? "M" : "L"} ${(position as Pos2)?.join(" ")}`
+          `${i === 0 ? "M" : "L"} ${(position as Pos2)?.join(" ")}`,
       )
       .join(" ");
   }
@@ -249,9 +288,17 @@ async function render(bbox: BBOX, options: Options = {}) {
     return ring
       .map(
         (position, i) =>
-          `${i === 0 ? "M" : "L"} ${proj(position as Pos2)?.join(" ")}`
+          `${i === 0 ? "M" : "L"} ${proj(position as Pos2)?.join(" ")}`,
       )
       .join(" ");
+  }
+
+  function flagIncomplete(feat: Feature) {
+    if (feat.geometry.type !== "Polygon") return false;
+    const first = feat.geometry.coordinates[0][0];
+    const last =
+      feat.geometry.coordinates[0][feat.geometry.coordinates.length - 1];
+    return first[0] !== last[0] || first[1] !== last[1];
   }
 
   /**
@@ -285,7 +332,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     for (const feature of features) {
       drawn++;
       progress(
-        `Drawing (${drawn} / ${features.length} elements), ${feature.geometry.type}`
+        `Drawing (${drawn} / ${features.length} elements), ${feature.geometry.type}`,
       );
       // await new Promise<void>((resolve) => resolve());
 
@@ -294,11 +341,15 @@ async function render(bbox: BBOX, options: Options = {}) {
         case "Polygon":
         case "LineString":
         case "MultiLineString": {
+          if (feature.properties?.name?.includes("Golfo")) {
+            console.log(feature, flagIncomplete(feature));
+            continue;
+          }
           const vec = figma.createVector();
           await applyStyle(vec, style, scaleFactor);
 
           if (name) {
-            vec.name = name;
+            vec.name = `${name}`;
           }
 
           const type = feature.geometry.type;
@@ -307,8 +358,8 @@ async function render(bbox: BBOX, options: Options = {}) {
             type === "LineString"
               ? [encodeRing(feature.geometry.coordinates)]
               : type === "MultiLineString" || type === "Polygon"
-              ? feature.geometry.coordinates.map(encodeRing)
-              : [];
+                ? feature.geometry.coordinates.map(encodeRing)
+                : [];
 
           vec.vectorPaths = data.map((data) => {
             return {
@@ -321,7 +372,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
           featureAreas.set(
             feature.properties!.id,
-            vec.absoluteBoundingBox!.width * vec.absoluteBoundingBox!.height
+            vec.absoluteBoundingBox!.width * vec.absoluteBoundingBox!.height,
           );
 
           vecs.push(vec);
@@ -429,7 +480,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
       const normalized = rewindFeatureCollection(
         normalize(overlay.geojson),
-        "d3"
+        "d3",
       );
 
       geoStream(normalized, stream);
@@ -456,8 +507,8 @@ async function render(bbox: BBOX, options: Options = {}) {
       const projectedLine = projectRing(feature.geometry.coordinates);
       const labelPositions = centerSort(
         linelabel(projectedLine, name.length * labelSize).filter(
-          (label) => label.length > name.length * labelSize * 0.5
-        )
+          (label) => label.length > name.length * labelSize * 0.5,
+        ),
       );
 
       // If there are no viable positions, bail.
@@ -479,7 +530,7 @@ async function render(bbox: BBOX, options: Options = {}) {
       function getLabelParameters(segment: LabelableSegment) {
         const [a, b] = getLabelEndpoints(segment);
         const width = Math.sqrt(
-          Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2)
+          Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2),
         );
 
         const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
@@ -580,7 +631,7 @@ async function render(bbox: BBOX, options: Options = {}) {
       }
 
       const point = proj(
-        polylabel(feature.geometry.coordinates) as unknown as Pos2
+        polylabel(feature.geometry.coordinates) as unknown as Pos2,
       );
 
       if (point) {

@@ -45,7 +45,8 @@ const landuse = new Set([
 const leisure = new Set([
   "garden",
   "golf_course",
-  "nature_reserve",
+  // These can be in water sometimes!
+  // "nature_reserve",
   "park",
   "pitch",
   "track",
@@ -80,7 +81,8 @@ export function isWaterLine(tags: Tags) {
 export function isWater(tags: Tags) {
   return (
     tags.natural === "water" ||
-    tags.natural === "coastline" ||
+    // Try not to render coastlines
+    // tags.natural === "coastline" ||
     tags.natural === "bay" ||
     tags.landuse === "pond" ||
     tags.landuse === "basin" ||
@@ -89,6 +91,7 @@ export function isWater(tags: Tags) {
     tags.leisure === "swimming_pool"
   );
 }
+
 export function isUniversity(tags: Tags) {
   return educational.has(tags.amenity);
 }
@@ -181,7 +184,7 @@ export function getWayGroup(feature: Feature): GROUPS | null {
     (isWater(properties) &&
       (type === "Polygon" || type === "MultiPolygon"
         ? GROUPS.WaterArea
-        : GROUPS.Water)) ||
+        : null)) ||
     (isBuilding(properties) && GROUPS.Building) ||
     (isIndustrial(properties) && GROUPS.Industrial) ||
     (isCommercial(properties) && GROUPS.Commercial) ||
