@@ -2,6 +2,7 @@
 @import "../node_modules/leaflet-control-geocoder/dist/Control.Geocoder.css";
 
 body {
+  background: var(--figma-color-bg);
   padding: 0;
   margin: 0;
   font-family: Inter, sans-serif;
@@ -13,15 +14,34 @@ body {
 }
 
 .ui button {
-  background: var(--figma-color-bg, #fff);
-  color: var(--figma-color-text, #222);
-  padding: 5px;
-  border: 1px solid var(--figma-color-border, #777);
+  background: var(--figma-color-bg-brand, #fff);
+  color: var(--figma-color-text-onbrand, #222);
+  padding: 5px 10px;
+  border: none;
   border-radius: 4px;
   font-size: 14px;
   display: flex;
   align-items: center;
   gap: 0px 6px;
+  cursor: pointer;
+}
+
+.ui button:hover {
+  background-color: var(--figma-color-bg-brand-hover);
+}
+
+.ui button.secondary {
+  border: none;
+  color: var(--figma-color-text);
+  background-color: transparent;
+}
+
+.ui button.square {
+  padding: 5px;
+}
+
+.ui button.secondary:hover {
+  background-color: var(--figma-color-bg-hover);
 }
 
 h2 {

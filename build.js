@@ -10,17 +10,15 @@ function buildTemplate() {
   const js = Fs.readFileSync("dist/ui.js", "utf8");
   const hyperscript = Fs.readFileSync(
     "node_modules/hyperscript.org/dist/_hyperscript.min.js",
-    "utf8"
+    "utf8",
   );
   const css = Fs.readFileSync("dist/ui.css", "utf8");
   console.log("Rebuilt template");
-  Fs.writeFileSync(
-    "dist/ui.html",
-    template
-      .replace("{SCRIPT}", js)
-      .replace("{HYPERSCRIPT}", hyperscript)
-      .replace("{STYLE}", css)
-  );
+  const replaced = template
+    .replace("__JSSCRIPT__", js)
+    .replace("__HYPERSCRIPT__", hyperscript)
+    .replace("__CSSSTYLE__", css);
+  Fs.writeFileSync("dist/ui.html", replaced);
 }
 
 esbuild

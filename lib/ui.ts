@@ -1,6 +1,7 @@
 import * as L from "leaflet";
 import GeocoderControl from "leaflet-control-geocoder";
 import { fileOpen } from "browser-fs-access";
+
 import { check } from "@placemarkio/check-geojson";
 
 const mapElement = document.getElementById("map")!;
@@ -47,7 +48,7 @@ leafletMap.on("moveend", () => {
         bbox,
       },
     },
-    "*"
+    "*",
   );
   document.body.dispatchEvent(
     new CustomEvent("saveviewport", {
@@ -56,7 +57,7 @@ leafletMap.on("moveend", () => {
         openstreetmap_url: `https://www.openstreetmap.org/#map=${zoom}/${center.lat}/${center.lng}`,
         google_url: `https://www.google.com/maps?ll=${center.lat},${center.lng}&hl=en&t=m&z=${zoom}`,
       },
-    })
+    }),
   );
 });
 
@@ -74,7 +75,7 @@ addEventListener("message", (evt) => {
     case "settings": {
       try {
         for (const [name, value] of Object.entries(
-          evt.data.pluginMessage.settings
+          evt.data.pluginMessage.settings,
         )) {
           const input = document.body.querySelector(`[name=${name}]`);
           if (input) {
@@ -162,7 +163,7 @@ captureButton.onclick = () => {
         overlays,
       },
     },
-    "*"
+    "*",
   );
 };
 
@@ -187,7 +188,7 @@ for (const elem of Array.from(document.querySelectorAll("[data-setting]"))) {
           value: target.value,
         },
       },
-      "*"
+      "*",
     );
   });
 }

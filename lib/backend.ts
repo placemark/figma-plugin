@@ -84,6 +84,7 @@ const dim = 720;
 figma.showUI(__html__, {
   width: Math.round(dim),
   height: Math.round(dim / aspect) + 50,
+  themeColors: true,
 });
 
 figma.ui.postMessage({
@@ -149,7 +150,7 @@ figma.ui.onmessage = (msg) => {
       frame.setPluginData(ATTACHED_KEY, JSON.stringify(attached));
       render(
         msg.bbox.split(",").map((b: string) => parseFloat(b)),
-        { overlays: msg.overlays }
+        { overlays: msg.overlays },
       )
         .catch((e) => {
           progress(e.message, { error: true });
@@ -213,7 +214,7 @@ async function render(bbox: BBOX, options: Options = {}) {
           [bbox[0], bbox[1]],
           [bbox[2], bbox[3]],
         ],
-      }
+      },
     )
     .clipExtent([
       [x - 100, y - 100],
@@ -240,7 +241,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     return ring
       .map(
         (position, i) =>
-          `${i === 0 ? "M" : "L"} ${(position as Pos2)?.join(" ")}`
+          `${i === 0 ? "M" : "L"} ${(position as Pos2)?.join(" ")}`,
       )
       .join(" ");
   }
@@ -249,7 +250,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     return ring
       .map(
         (position, i) =>
-          `${i === 0 ? "M" : "L"} ${proj(position as Pos2)?.join(" ")}`
+          `${i === 0 ? "M" : "L"} ${proj(position as Pos2)?.join(" ")}`,
       )
       .join(" ");
   }
@@ -285,7 +286,7 @@ async function render(bbox: BBOX, options: Options = {}) {
     for (const feature of features) {
       drawn++;
       progress(
-        `Drawing (${drawn} / ${features.length} elements), ${feature.geometry.type}`
+        `Drawing (${drawn} / ${features.length} elements), ${feature.geometry.type}`,
       );
       // await new Promise<void>((resolve) => resolve());
 
@@ -307,8 +308,8 @@ async function render(bbox: BBOX, options: Options = {}) {
             type === "LineString"
               ? [encodeRing(feature.geometry.coordinates)]
               : type === "MultiLineString" || type === "Polygon"
-              ? feature.geometry.coordinates.map(encodeRing)
-              : [];
+                ? feature.geometry.coordinates.map(encodeRing)
+                : [];
 
           vec.vectorPaths = data.map((data) => {
             return {
@@ -321,7 +322,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
           featureAreas.set(
             feature.properties!.id,
-            vec.absoluteBoundingBox!.width * vec.absoluteBoundingBox!.height
+            vec.absoluteBoundingBox!.width * vec.absoluteBoundingBox!.height,
           );
 
           vecs.push(vec);
@@ -429,7 +430,7 @@ async function render(bbox: BBOX, options: Options = {}) {
 
       const normalized = rewindFeatureCollection(
         normalize(overlay.geojson),
-        "d3"
+        "d3",
       );
 
       geoStream(normalized, stream);
@@ -456,8 +457,8 @@ async function render(bbox: BBOX, options: Options = {}) {
       const projectedLine = projectRing(feature.geometry.coordinates);
       const labelPositions = centerSort(
         linelabel(projectedLine, name.length * labelSize).filter(
-          (label) => label.length > name.length * labelSize * 0.5
-        )
+          (label) => label.length > name.length * labelSize * 0.5,
+        ),
       );
 
       // If there are no viable positions, bail.
@@ -479,7 +480,7 @@ async function render(bbox: BBOX, options: Options = {}) {
       function getLabelParameters(segment: LabelableSegment) {
         const [a, b] = getLabelEndpoints(segment);
         const width = Math.sqrt(
-          Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2)
+          Math.pow(a[0] - b[0], 2) + Math.pow(a[1] - b[1], 2),
         );
 
         const angle = Math.atan2(b[1] - a[1], b[0] - a[0]);
@@ -580,7 +581,7 @@ async function render(bbox: BBOX, options: Options = {}) {
       }
 
       const point = proj(
-        polylabel(feature.geometry.coordinates) as unknown as Pos2
+        polylabel(feature.geometry.coordinates) as unknown as Pos2,
       );
 
       if (point) {
