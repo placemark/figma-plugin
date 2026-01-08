@@ -1,5 +1,18 @@
-on: [push]
+name: Node CI
+
+on:
+  push:
 
 jobs:
-  test:
-    uses: "placemark/workflows/.github/workflows/vitest.yml@v3"
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v3
+      - name: pnpm install, build, and test
+        run: |
+          pnpm i
+          pnpm test
+        env:
+          CI: true
