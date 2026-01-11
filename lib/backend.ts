@@ -103,7 +103,7 @@ if (attached) {
         bbox: data.bbox,
       });
     }
-  } catch (e) {}
+  } catch {}
 } else {
   void figma.clientStorage.getAsync(STORAGE_KEY).then((stored) => {
     if (stored) {
