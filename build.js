@@ -1,5 +1,5 @@
-const esbuild = require("esbuild");
-const Fs = require("fs");
+import esbuild from "esbuild";
+import Fs from "node:fs";
 
 Fs.watchFile("lib/ui.html", (curr, prev) => {
   buildTemplate();
@@ -21,57 +21,39 @@ function buildTemplate() {
   Fs.writeFileSync("dist/ui.html", replaced);
 }
 
-esbuild
-  .build({
+const context = await esbuild
+  .context({
     entryPoints: ["lib/ui.css"],
     bundle: true,
-    watch: true,
     outfile: "dist/ui.css",
     loader: {
       ".png": "dataurl",
     },
     logLevel: "info",
-    watch: {
-      onRebuild(error, result) {
-        if (error) console.error("watch build (ui) failed:", error);
-        else console.log("watch build (ui) succeeded:", result);
-        buildTemplate();
-      },
-    },
   })
   .catch(() => process.exit(1));
 
-esbuild
-  .build({
+await context.watch();
+
+const context2 = await esbuild
+  .context({
     entryPoints: ["lib/ui.ts"],
     bundle: true,
-    watch: true,
     outfile: "dist/ui.js",
     logLevel: "info",
-    watch: {
-      onRebuild(error, result) {
-        if (error) console.error("watch build (ui) failed:", error);
-        else console.log("watch build (ui) succeeded:", result);
-        buildTemplate();
-      },
-    },
   })
   .catch(() => process.exit(1));
 
-esbuild
-  .build({
+await context2.watch();
+
+const context3 = await esbuild
+  .context({
     entryPoints: ["lib/backend.ts"],
     bundle: true,
-    watch: true,
     outfile: "dist/backend.js",
     logLevel: "info",
     target: "es6",
-    watch: {
-      onRebuild(error, result) {
-        if (error) console.error("watch build (code) failed:", error);
-        else console.log("watch build (code) succeeded:", result);
-        buildTemplate();
-      },
-    },
   })
   .catch(() => process.exit(1));
+
+await context3.watch();
