@@ -1,11 +1,13 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "es6",
+    "moduleResolution": "bundler",
+    "target": "es2020",
     "allowSyntheticDefaultImports": true,
-    "lib": ["es6", "dom"],
+    "lib": ["es2020", "dom"],
     "strict": true,
     "noEmit": true,
-    "typeRoots": ["./node_modules/@types", "./node_modules/@figma"]
+    "typeRoots": ["./node_modules/@types", "./node_modules/@figma"],
+    "module": "esnext",
+    "skipLibCheck": true
   }
 }

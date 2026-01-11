@@ -1,6 +1,8 @@
 import esbuild from "esbuild";
 import Fs from "node:fs";
 
+const shouldWatch = process.argv[2] === "--watch";
+
 Fs.watchFile("lib/ui.html", (curr, prev) => {
   buildTemplate();
 });
@@ -21,39 +23,35 @@ function buildTemplate() {
   Fs.writeFileSync("dist/ui.html", replaced);
 }
 
-const context = await esbuild
-  .context({
-    entryPoints: ["lib/ui.css"],
-    bundle: true,
-    outfile: "dist/ui.css",
-    loader: {
-      ".png": "dataurl",
-    },
-    logLevel: "info",
-  })
-  .catch(() => process.exit(1));
+const context = await esbuild[shouldWatch ? "context" : "build"]({
+  entryPoints: ["lib/ui.css"],
+  bundle: true,
+  outfile: "dist/ui.css",
+  loader: {
+    ".png": "dataurl",
+  },
+  logLevel: "info",
+}).catch(() => process.exit(1));
 
-await context.watch();
+const context2 = await esbuild[shouldWatch ? "context" : "build"]({
+  entryPoints: ["lib/ui.ts"],
+  bundle: true,
+  outfile: "dist/ui.js",
+  logLevel: "info",
+}).catch(() => process.exit(1));
 
-const context2 = await esbuild
-  .context({
-    entryPoints: ["lib/ui.ts"],
-    bundle: true,
-    outfile: "dist/ui.js",
-    logLevel: "info",
-  })
-  .catch(() => process.exit(1));
+const context3 = await esbuild[shouldWatch ? "context" : "build"]({
+  entryPoints: ["lib/backend.ts"],
+  bundle: true,
+  outfile: "dist/backend.js",
+  logLevel: "info",
+  target: "es6",
+}).catch(() => process.exit(1));
 
-await context2.watch();
-
-const context3 = await esbuild
-  .context({
-    entryPoints: ["lib/backend.ts"],
-    bundle: true,
-    outfile: "dist/backend.js",
-    logLevel: "info",
-    target: "es6",
-  })
-  .catch(() => process.exit(1));
-
-await context3.watch();
+if (shouldWatch) {
+  await context.watch();
+  await context2.watch();
+  await context3.watch();
+} else {
+  process.exit(0);
+}

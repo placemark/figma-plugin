@@ -6,7 +6,9 @@
   "main": "code.js",
   "scripts": {
     "build": "node build.js",
+    "watch": "node build.js --watch",
     "lint": "eslint lib/**/*.ts",
+    "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
   "author": "Tom MacWright",

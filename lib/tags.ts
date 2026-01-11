@@ -63,13 +63,44 @@ const paths = new Set([
   "pedestrian",
 ]);
 
+const parking = new Set(["multi-storey", "sheds", "carports", "garage_boxes"]);
+
+const landuseWater = new Set(["pond", "basin", "reservoir", "salt_pond"]);
+const naturalWater = new Set(["water", "coastline", "bay"]);
+
+const highwaysQuery = new Set([
+  ...supermajor_traffic_roads,
+  ...major_traffic_roads,
+  ...traffic_roads,
+  ...service_roads,
+  ...paths,
+]);
+
+const naturalQuery = new Set([...naturalWater, "tree", "wood"]);
+
+const landuseQuery = new Set([
+  ...landuseWater,
+  ...landuse,
+  "industrial",
+  "commercial",
+  "retail",
+  "residential",
+  "forest",
+  "railway",
+]);
+
+export const TAGS_FOR_QUERY = {
+  amenity: Array.from(educational).join("|"),
+  parking: Array.from(parking).join("|"),
+  leisure: Array.from(leisure).join("|"),
+  landuse: Array.from(landuseQuery).join("|"),
+  highway: Array.from(highwaysQuery).join("|"),
+  natural: Array.from(naturalQuery).join("|"),
+};
+
 export function isBuilding(tags: Tags) {
   return (
-    (!!tags.building && tags.building !== "no") ||
-    tags.parking === "multi-storey" ||
-    tags.parking === "sheds" ||
-    tags.parking === "carports" ||
-    tags.parking === "garage_boxes"
+    (!!tags.building && tags.building !== "no") || parking.has(tags.parking)
   );
 }
 
@@ -79,13 +110,8 @@ export function isWaterLine(tags: Tags) {
 
 export function isWater(tags: Tags) {
   return (
-    tags.natural === "water" ||
-    tags.natural === "coastline" ||
-    tags.natural === "bay" ||
-    tags.landuse === "pond" ||
-    tags.landuse === "basin" ||
-    tags.landuse === "reservoir" ||
-    tags.landuse === "salt_pond" ||
+    naturalWater.has(tags.natural) ||
+    landuseWater.has(tags.landuse) ||
     tags.leisure === "swimming_pool"
   );
 }
