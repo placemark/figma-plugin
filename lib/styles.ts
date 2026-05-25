@@ -61,6 +61,16 @@ export const getStyles = async (reset: boolean) => {
   })();
 
   const STYLES: Record<GROUPS, Style> = {
+    [GROUPS.Ocean]: await (async () => {
+      const fillStyle = await createColorPaint(
+        "Ocean fill",
+        [0.7, 0.7, 0.9]
+      );
+      return {
+        fillStyleId: fillStyle.id,
+        strokeWeight: 0,
+      };
+    })(),
     [GROUPS.Building]: await (async () => {
       const fillStyle = await createColorPaint(
         "Building fill",

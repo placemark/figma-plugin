@@ -94,8 +94,14 @@ export const TAGS_FOR_QUERY = {
   parking: Array.from(parking).join("|"),
   leisure: Array.from(leisure).join("|"),
   landuse: Array.from(landuseQuery).join("|"),
-  highway: Array.from(highwaysQuery).join("|"),
   natural: Array.from(naturalQuery).join("|"),
+  highways: {
+    supermajor: Array.from(supermajor_traffic_roads).join("|"),
+    major: Array.from(major_traffic_roads).join("|"),
+    traffic: Array.from(traffic_roads).join("|"),
+    service: Array.from(service_roads).join("|"),
+    paths: Array.from(paths).join("|"),
+  },
 };
 
 export function isBuilding(tags: Tags) {

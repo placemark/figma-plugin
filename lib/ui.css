@@ -124,6 +124,71 @@ p {
   animation: pulse 1s infinite;
 }
 
+.layer-info {
+  background: var(--figma-color-bg, #fff);
+  border-radius: 4px;
+  font-size: 11px;
+  max-width: 180px;
+}
+
+.layer-info-toggle {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  font-family: inherit;
+  color: var(--figma-color-text, #333);
+  text-align: left;
+}
+
+.layer-info-toggle:hover {
+  background: var(--figma-color-bg-hover, #f0f0f0);
+}
+
+.layer-info-list {
+  border-top: 1px solid var(--figma-color-border, #ddd);
+  padding: 4px 0;
+}
+
+.layer-info-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 8px;
+  transition: opacity 0.15s;
+}
+
+.layer-info-row.inactive {
+  opacity: 0.35;
+}
+
+.layer-info-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: #4caf50;
+  transition: background 0.15s;
+}
+
+.layer-info-dot[data-active="false"] {
+  background: #bbb;
+}
+
+.layer-info-label {
+  flex: 1;
+  min-width: 0;
+}
+
+.layer-info-zoom {
+  color: var(--figma-color-text-secondary, #888);
+  font-size: 10px;
+  flex-shrink: 0;
+}
+
 @keyframes pulse {
   0% {
     transform: scale(0.95);

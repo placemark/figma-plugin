@@ -1,6 +1,6 @@
 import { buildNetwork } from "./network";
 import polylabel from "polylabel";
-import { geoMercator, geoStream } from "d3-geo";
+import { geoMercator, geoPath, geoStream } from "d3-geo";
 import { request } from "./request";
 // @ts-expect-error this doesn't have types
 import normalize from "@mapbox/geojson-normalize";
@@ -11,8 +11,10 @@ import {
   GROUP_AREA_LABEL_ORDER,
   GROUP_LABEL_ORDER,
   GROUP_ORDER,
+  GROUPS,
   Pos2,
 } from "./types";
+import oceanData from "./ocean.json";
 import { progress } from "./progress";
 import { STORAGE_KEY, ATTACHED_KEY } from "./constants";
 import { getMaybeParentFrame } from "./selection";
@@ -150,7 +152,11 @@ figma.ui.onmessage = (msg) => {
       frame.setPluginData(ATTACHED_KEY, JSON.stringify(attached));
       render(
         msg.bbox.split(",").map((b: string) => parseFloat(b)),
-        { overlays: msg.overlays },
+        {
+          overlays: msg.overlays,
+          zoom: msg.zoom,
+          showBuildings: msg.showBuildings,
+        },
       )
         .catch((e) => {
           progress(e.message, { error: true });
@@ -191,6 +197,8 @@ async function getSettings(): Promise<Settings> {
 
 interface Options {
   overlays?: any[];
+  zoom?: number;
+  showBuildings?: boolean;
 }
 
 async function render(bbox: BBOX, options: Options = {}) {
@@ -223,10 +231,23 @@ async function render(bbox: BBOX, options: Options = {}) {
 
   progress("Requesting data");
 
-  const j = await request(bbox);
+  const j = await request(bbox, {
+    zoom: options.zoom,
+    showBuildings: options.showBuildings,
+  });
   progress("Building network");
 
   const grouped = buildNetwork(j);
+
+  grouped.set(
+    GROUPS.Ocean,
+    oceanData.features.map((f) => ({
+      type: "Feature" as const,
+      properties: { id: `ocean-${f.properties.scalerank}`, name: "Ocean" },
+      geometry: f.geometry as GeoJSON.Polygon,
+    })),
+  );
+
   progress("Creating frame");
 
   let drawn = 0;
@@ -274,7 +295,42 @@ async function render(bbox: BBOX, options: Options = {}) {
    */
   const featureAreas = new Map<string, number>();
 
+  // Render ocean polygons using geoPath so that clipExtent properly
+  // preserves polygon holes (land cutouts). The regular encodeRing
+  // pipeline projects points individually, which breaks for world-spanning
+  // polygons.
+  const oceanFeatures = grouped.get(GROUPS.Ocean);
+  if (oceanFeatures) {
+    const pathGenerator = geoPath(proj);
+    const style = STYLES[GROUPS.Ocean];
+    const vecs: VectorNode[] = [];
+    for (const feature of oceanFeatures) {
+      const rawPath = pathGenerator(feature.geometry);
+      if (!rawPath) continue;
+      // Figma requires a space between SVG path commands and coordinates.
+      // d3-geo emits compact paths like "M-100,-100" which Figma can't parse.
+      const pathData = rawPath.replace(/,/g, " ").replace(/([MLCSQTAHVZ])/g, " $1 ").trim().replace(/ +/g, " ");
+      const vec = figma.createVector();
+      await applyStyle(vec, style, scaleFactor);
+      vec.name = "Ocean";
+      vec.vectorPaths = [
+        {
+          windingRule: "EVENODD",
+          data: pathData,
+        },
+      ];
+      figma.currentPage.appendChild(vec);
+      vecs.push(vec);
+    }
+    if (vecs.length) {
+      const oceanGroup = figma.group(vecs, frame);
+      oceanGroup.expanded = false;
+      oceanGroup.name = GROUPS.Ocean;
+    }
+  }
+
   for (const group of GROUP_ORDER) {
+    if (group === GROUPS.Ocean) continue;
     const features = grouped.get(group);
     if (!features) continue;
     console.log(`Rendering ${group} (${features.length} features)`);
@@ -625,6 +681,12 @@ async function render(bbox: BBOX, options: Options = {}) {
     const figmaGroup = figma.group(labels, frame);
     figmaGroup.expanded = false;
     figmaGroup.name = "Labels";
+  }
+
+  // Move ocean to the back (last child = lowest z-order in Figma)
+  const oceanChild = frame.children.find((c) => c.name === GROUPS.Ocean);
+  if (oceanChild) {
+    frame.insertChild(frame.children.length - 1, oceanChild);
   }
 
   console.log("Done?");

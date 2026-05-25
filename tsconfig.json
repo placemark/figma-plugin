@@ -8,6 +8,7 @@
     "noEmit": true,
     "typeRoots": ["./node_modules/@types", "./node_modules/@figma"],
     "module": "esnext",
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "resolveJsonModule": true
   }
 }

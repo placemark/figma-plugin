@@ -62,6 +62,7 @@ export interface Circle {
 export type Mark = MultiLine | Circle;
 
 export enum GROUPS {
+  Ocean = "Ocean",
   Park = "Park",
   OverlayPoint = "OverlayPoint",
   OverlayPolygon = "OverlayPolygon",
@@ -89,6 +90,7 @@ export enum GROUPS {
  * From bottom to top
  */
 export const GROUP_ORDER = [
+  GROUPS.Ocean,
   GROUPS.University,
   GROUPS.Industrial,
   GROUPS.Commercial,

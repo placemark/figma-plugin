@@ -3,6 +3,7 @@ import GeocoderControl from "leaflet-control-geocoder";
 import { fileOpen } from "browser-fs-access";
 
 import { check } from "@placemarkio/check-geojson";
+import { ZOOM_LAYERS } from "./zoom-layers";
 
 const mapElement = document.getElementById("map")!;
 const message = document.getElementById("message")!;
@@ -28,6 +29,67 @@ new GeocoderControl({
   })
   .addTo(leafletMap)
   .setPosition("topright");
+
+const LayerInfoControl = L.Control.extend({
+  options: { position: "bottomleft" as L.ControlPosition },
+  onAdd() {
+    const container = L.DomUtil.create("div", "layer-info leaflet-bar");
+    L.DomEvent.disableClickPropagation(container);
+
+    const toggle = L.DomUtil.create("button", "layer-info-toggle", container);
+    toggle.textContent = "Layers";
+    toggle.type = "button";
+
+    const list = L.DomUtil.create("div", "layer-info-list", container);
+    list.style.display = "none";
+
+    toggle.addEventListener("click", () => {
+      const open = list.style.display !== "none";
+      list.style.display = open ? "none" : "";
+      toggle.classList.toggle("open", !open);
+    });
+
+    for (const layer of ZOOM_LAYERS) {
+      const row = L.DomUtil.create("div", "layer-info-row", list);
+      const dot = L.DomUtil.create("span", "layer-info-dot", row);
+      const label = L.DomUtil.create("span", "layer-info-label", row);
+      label.textContent = layer.name;
+      if (layer.minZoom !== null) {
+        const badge = L.DomUtil.create("span", "layer-info-zoom", row);
+        badge.textContent = `z${layer.minZoom}+`;
+      }
+      row.dataset.minZoom = String(layer.minZoom ?? 0);
+      dot.dataset.active = "true";
+    }
+
+    this._container = container;
+    this._list = list;
+    this._updateZoom();
+    return container;
+  },
+  _container: null as HTMLElement | null,
+  _list: null as HTMLElement | null,
+  _updateZoom() {
+    if (!this._list) return;
+    const zoom = leafletMap.getZoom();
+    for (const row of Array.from(
+      this._list.querySelectorAll(".layer-info-row"),
+    ) as HTMLElement[]) {
+      const minZoom = Number(row.dataset.minZoom);
+      const active = zoom >= minZoom;
+      row.classList.toggle("inactive", !active);
+      const dot = row.querySelector(".layer-info-dot") as HTMLElement;
+      if (dot) dot.dataset.active = String(active);
+    }
+  },
+});
+
+const layerInfoControl = new LayerInfoControl();
+layerInfoControl.addTo(leafletMap);
+
+leafletMap.on("zoom", () => {
+  layerInfoControl._updateZoom();
+});
 
 leafletMap.on("moveend", () => {
   const bbox = leafletMap.getBounds().toBBoxString();
@@ -155,12 +217,19 @@ captureButton.onclick = () => {
     }
   });
 
+  const zoom = leafletMap.getZoom();
+  const showBuildings =
+    (document.getElementById("showBuildings") as HTMLInputElement)?.checked ??
+    true;
+
   parent.postMessage(
     {
       pluginMessage: {
         type: "render-map",
         bbox: leafletMap.getBounds().toBBoxString(),
         overlays,
+        zoom,
+        showBuildings,
       },
     },
     "*",
