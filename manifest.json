@@ -1,12 +1,13 @@
 {
   "name": "Placemark",
   "id": "1189962635826293304",
-  "api": "1.0.0",
+  "api": "1.0.1",
   "main": "dist/backend.js",
   "editorType": ["figma"],
   "networkAccess": {
     "allowedDomains": [
       "https://overpass-api.de",
+      "https://overpass.private.coffee",
       "https://tile.openstreetmap.org",
       "https://nominatim.openstreetmap.org"
     ]

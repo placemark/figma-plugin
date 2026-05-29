@@ -18,6 +18,13 @@ but much simpler.
 | unlimited printing & reproduction | yes           | no (mapbox tos has requirements) |
 | api key required                  | no            | yes                              |
 
+## Notes
+
+- Trying to create a global or city-scale map will fail. It's a lot of data and this
+  plugin uses and generates raw data.
+- Rendering maps is dependent on Overpass APIs: currently the [private.coffee](https://overpass.kumi.systems/)
+  implementation. This service is free and has no strong uptime guarantee.
+
 ## Development
 
 The `build` script will continuously build and update this plugin.

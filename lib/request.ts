@@ -29,8 +29,12 @@ export async function request(bbox: [number, number, number, number]) {
     node["natural"="tree"](${bboxString});
   ); out geom;`;
 
+  console.log(
+    `https://overpass.private.coffee/api/interpreter?data=${encodeURIComponent(query)}`,
+  );
+
   const res = await fetch(
-    `https://overpass-api.de/api/interpreter?data=${encodeURIComponent(query)}`,
+    `https://overpass.private.coffee/api/interpreter?data=${encodeURIComponent(query)}`,
     {
       /**
        * Figma doesn't support Headers()
