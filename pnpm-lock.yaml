@@ -51,6 +51,9 @@ importers:
         specifier: ^4.0.1
         version: 4.0.1
     devDependencies:
+      '@changesets/cli':
+        specifier: ^2.31.0
+        version: 2.31.0
       '@figma/eslint-plugin-figma-plugins':
         specifier: ^1.0.0
         version: 1.0.0(eslint@9.39.2(jiti@2.7.0))
