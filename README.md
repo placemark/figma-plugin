@@ -22,8 +22,8 @@ but much simpler.
 
 - Trying to create a global or city-scale map will fail. It's a lot of data and this
   plugin uses and generates raw data.
-- Rendering maps is dependent on Overpass APIs: currently the [private.coffee](https://overpass.kumi.systems/)
-  implementation. This service is free and has no strong uptime guarantee.
+- Rendering maps is dependent on the [Postpass](https://wiki.openstreetmap.org/wiki/Postpass) API
+  run by [Geofabrik](https://postpass.geofabrik.de/). This service might go down occasionally!
 
 ## Development
 

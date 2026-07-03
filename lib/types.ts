@@ -10,57 +10,6 @@ export type Pos2 = [number, number];
 
 export type BBOX = [number, number, number, number];
 
-export interface Bounds {
-  minlat: number;
-  minlon: number;
-  maxlat: number;
-  maxlon: number;
-}
-
-type Id = number;
-
-export interface Element {
-  type: "way" | "node" | "relation";
-  id: Id;
-  lat: number;
-  lon: number;
-  timestamp: Date;
-  version: number;
-  changeset: number;
-  user: string;
-  uid: number;
-  tags: Tags;
-  nodes?: Id[];
-  members?: {
-    type: "way" | "node";
-    role: string;
-    ref: Id;
-  }[];
-}
-
-export interface RootObject {
-  version: string;
-  generator: string;
-  copyright: string;
-  attribution: string;
-  license: string;
-  bounds: Bounds;
-  elements: Element[];
-}
-
-export interface MultiLine {
-  type: "line";
-  way: Element;
-  nodes: Element[][];
-}
-
-export interface Circle {
-  type: "circle";
-  node: Element;
-}
-
-export type Mark = MultiLine | Circle;
-
 export enum GROUPS {
   Park = "Park",
   OverlayPoint = "OverlayPoint",

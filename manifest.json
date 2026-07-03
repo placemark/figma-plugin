@@ -6,8 +6,7 @@
   "editorType": ["figma"],
   "networkAccess": {
     "allowedDomains": [
-      "https://overpass-api.de",
-      "https://overpass.private.coffee",
+      "https://postpass.geofabrik.de",
       "https://tile.openstreetmap.org",
       "https://nominatim.openstreetmap.org"
     ]

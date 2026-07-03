@@ -1,0 +1,10 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  "entry": ["lib/backend.ts", "lib/ui.ts", "build.js"],
+  "project": ["lib/**/*.ts", "build.js"],
+  "ignoreDependencies": [
+    "hyperscript.org",
+    "@figma/plugin-typings",
+    "prettier"
+  ]
+}
