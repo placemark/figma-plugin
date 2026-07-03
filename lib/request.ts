@@ -57,16 +57,60 @@ function tagFilters(rules: TagRule[], zoom: number): string[] {
   );
 }
 
+/** Width of one screen pixel at this zoom, in degrees of longitude. */
+function pixelDegrees(zoom: number): number {
+  return 360 / (256 * 2 ** zoom);
+}
+
+/**
+ * The only tags that grouping and labeling read. Full OSM tag sets
+ * (addresses, lane counts…) multiply response size, so everything
+ * else is dropped server-side.
+ */
+const RENDER_KEYS = [
+  "highway",
+  "railway",
+  "natural",
+  "landuse",
+  "leisure",
+  "amenity",
+  "parking",
+  "building",
+  "waterway",
+  "name",
+];
+
+const PRUNED_TAGS = `jsonb_strip_nulls(jsonb_build_object(${RENDER_KEYS.map(
+  (key) => `'${key}', tags->'${key}'`,
+).join(", ")}))`;
+
+/**
+ * Simplify geometry to a sixteenth of a pixel of tolerance — the
+ * quantization precision of vector tiles (4096 units per 256px
+ * tile). At high zooms the plain geometry is already that fine.
+ */
+function simplified(expression: string, zoom: number): string {
+  if (zoom >= 15) return expression;
+  return `ST_SimplifyPreserveTopology(${expression}, ${pixelDegrees(zoom) / 16})`;
+}
+
 /**
  * Mimic OpenMapTiles generalization: below z14, drop polygons
  * smaller than about 4×4 pixels at the current zoom. The result is
  * in square degrees, since postpass geometries are EPSG:4326.
  */
 function minPolygonArea(bbox: BBOX, zoom: number): number {
-  const pixel = 360 / (256 * 2 ** zoom);
+  const pixel = pixelDegrees(zoom);
   const centerLat = (((bbox[1] + bbox[3]) / 2) * Math.PI) / 180;
   return 16 * pixel * pixel * Math.cos(centerLat);
 }
+
+/**
+ * Below this zoom, contiguous lines that share their rendered tags
+ * (the same road, split into many OSM ways) are merged server-side,
+ * the way OpenMapTiles merges them in zoomed-out tiles.
+ */
+const LINE_MERGE_MAX_ZOOM = 12;
 
 export function buildQuery(bbox: BBOX, zoom: number) {
   const envelope = `ST_MakeEnvelope(${bbox.join(", ")}, 4326)`;
@@ -74,17 +118,29 @@ export function buildQuery(bbox: BBOX, zoom: number) {
 
   const lineFilters = tagFilters(LINE_RULES, zoom);
   if (lineFilters.length) {
-    branches.push(`SELECT osm_type, osm_id, tags, geom
+    if (zoom < LINE_MERGE_MAX_ZOOM) {
+      const merged = simplified(
+        `ST_LineMerge(ST_CollectionExtract(ST_Collect(geom), 2))`,
+        zoom,
+      );
+      branches.push(`SELECT 'W' AS osm_type, min(osm_id) AS osm_id, ${PRUNED_TAGS} AS tags, ${merged} AS geom
+FROM postpass_line
+WHERE geom && ${envelope}
+AND (${lineFilters.join("\n  OR ")})
+GROUP BY ${PRUNED_TAGS}`);
+    } else {
+      branches.push(`SELECT osm_type, osm_id, ${PRUNED_TAGS} AS tags, ${simplified("geom", zoom)} AS geom
 FROM postpass_line
 WHERE geom && ${envelope}
 AND (${lineFilters.join("\n  OR ")})`);
+    }
   }
 
   const polygonFilters = tagFilters(POLYGON_RULES, zoom);
   if (polygonFilters.length) {
     const areaFilter =
       zoom < 14 ? `\nAND ST_Area(geom) > ${minPolygonArea(bbox, zoom)}` : "";
-    branches.push(`SELECT osm_type, osm_id, tags, geom
+    branches.push(`SELECT osm_type, osm_id, ${PRUNED_TAGS} AS tags, ${simplified("geom", zoom)} AS geom
 FROM postpass_polygon
 WHERE geom && ${envelope}
 AND (${polygonFilters.join("\n  OR ")})${areaFilter}`);
@@ -92,7 +148,7 @@ AND (${polygonFilters.join("\n  OR ")})${areaFilter}`);
 
   const pointFilters = tagFilters(POINT_RULES, zoom);
   if (pointFilters.length) {
-    branches.push(`SELECT osm_type, osm_id, tags, geom
+    branches.push(`SELECT osm_type, osm_id, ${PRUNED_TAGS} AS tags, geom
 FROM postpass_point
 WHERE geom && ${envelope}
 AND (${pointFilters.join("\n  OR ")})`);

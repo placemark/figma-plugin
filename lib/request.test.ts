@@ -25,8 +25,12 @@ test("buildQuery at high zoom includes everything", () => {
   expect(query).toContain("'motorway'");
   expect(query).toContain("'footway'");
   expect(query).toContain("'tree'");
-  // No generalization at z14+
+  // No generalization at high zoom
   expect(query).not.toContain("ST_Area");
+  expect(query).not.toContain("ST_SimplifyPreserveTopology");
+  expect(query).not.toContain("GROUP BY");
+  // Tags are pruned at every zoom
+  expect(query).toContain("jsonb_build_object");
 });
 
 test("buildQuery at mid zoom excludes detail features", () => {
@@ -42,6 +46,17 @@ test("buildQuery at mid zoom excludes detail features", () => {
   expect(query).toContain("tags->>'railway' IN ('rail')");
   // Small polygons are dropped
   expect(query).toContain("ST_Area(geom) >");
+  // Lines are merged per rendered-tag group and simplified
+  expect(query).toContain("ST_LineMerge");
+  expect(query).toContain("GROUP BY");
+  expect(query).toContain("ST_SimplifyPreserveTopology");
+});
+
+test("buildQuery at city zoom simplifies but keeps individual ways", () => {
+  const query = buildQuery([-74.03, 40.69, -73.95, 40.76], 14);
+  expect(query).toContain("ST_SimplifyPreserveTopology");
+  expect(query).not.toContain("GROUP BY");
+  expect(query).not.toContain("ST_Area(geom) >");
 });
 
 test("buildQuery at low zoom keeps water and major roads only", () => {
