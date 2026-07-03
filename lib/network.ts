@@ -1,10 +1,8 @@
-import { GROUPS, RootObject } from "./types";
-import osmtogeojson from "osmtogeojson";
+import { GROUPS } from "./types";
 import { FeatureCollection, Feature } from "geojson";
 import { getGroup } from "./tags";
 
-export function buildNetwork(j: RootObject) {
-  const geojson: FeatureCollection = osmtogeojson(j);
+export function buildNetwork(geojson: FeatureCollection) {
   const grouped: Map<GROUPS, Feature[]> = new Map();
 
   for (const feature of geojson.features) {

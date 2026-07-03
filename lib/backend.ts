@@ -581,7 +581,9 @@ async function render(bbox: BBOX, options: Options = {}) {
       }
 
       const point = proj(
-        polylabel(feature.geometry.coordinates) as unknown as Pos2,
+        polylabel(
+          feature.geometry.coordinates as unknown as [number, number][][],
+        ) as unknown as Pos2,
       );
 
       if (point) {

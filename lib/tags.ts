@@ -90,64 +90,64 @@ const landuseQuery = new Set([
 ]);
 
 export const TAGS_FOR_QUERY = {
-  amenity: Array.from(educational).join("|"),
-  parking: Array.from(parking).join("|"),
-  leisure: Array.from(leisure).join("|"),
-  landuse: Array.from(landuseQuery).join("|"),
-  highway: Array.from(highwaysQuery).join("|"),
-  natural: Array.from(naturalQuery).join("|"),
+  amenity: Array.from(educational),
+  parking: Array.from(parking),
+  leisure: Array.from(leisure),
+  landuse: Array.from(landuseQuery),
+  highway: Array.from(highwaysQuery),
+  natural: Array.from(naturalQuery),
 };
 
-export function isBuilding(tags: Tags) {
+function isBuilding(tags: Tags) {
   return (
     (!!tags.building && tags.building !== "no") || parking.has(tags.parking)
   );
 }
 
-export function isWaterLine(tags: Tags) {
+function isWaterLine(tags: Tags) {
   return !!tags.waterway;
 }
 
-export function isWater(tags: Tags) {
+function isWater(tags: Tags) {
   return (
     naturalWater.has(tags.natural) ||
     landuseWater.has(tags.landuse) ||
     tags.leisure === "swimming_pool"
   );
 }
-export function isUniversity(tags: Tags) {
+function isUniversity(tags: Tags) {
   return educational.has(tags.amenity);
 }
 
-export function isPitch(tags: Tags) {
+function isPitch(tags: Tags) {
   return tags.leisure === "pitch";
 }
 
-export function isPath(tags: Tags) {
+function isPath(tags: Tags) {
   return paths.has(tags.highway);
 }
 
-export function isTrafficRoadSupermajor(tags: Tags) {
+function isTrafficRoadSupermajor(tags: Tags) {
   return supermajor_traffic_roads.has(tags.highway);
 }
 
-export function isTrafficRoadMajor(tags: Tags) {
+function isTrafficRoadMajor(tags: Tags) {
   return major_traffic_roads.has(tags.highway);
 }
 
-export function isTrafficRoad(tags: Tags) {
+function isTrafficRoad(tags: Tags) {
   return traffic_roads.has(tags.highway);
 }
 
-export function isServiceRoad(tags: Tags) {
+function isServiceRoad(tags: Tags) {
   return service_roads.has(tags.highway);
 }
 
-export function isPark(tags: Tags) {
+function isPark(tags: Tags) {
   return leisure.has(tags.leisure) || landuse.has(tags.landuse);
 }
 
-export function isRail(tags: Tags) {
+function isRail(tags: Tags) {
   return (
     (!!tags.railway || tags.landuse === "railway") &&
     !(
@@ -163,30 +163,30 @@ export function isRail(tags: Tags) {
 /**
  * https://wiki.openstreetmap.org/wiki/Tag:natural%3Dtree
  */
-export function isTree(tags: Tags) {
+function isTree(tags: Tags) {
   return tags.natural === "tree";
 }
 
 /**
  * https://www.openstreetmap.org/way/1109695968
  */
-export function isWood(tags: Tags) {
+function isWood(tags: Tags) {
   return tags.natural === "wood" || tags.landuse === "forest";
 }
 
-export function isIndustrial(tags: Tags) {
+function isIndustrial(tags: Tags) {
   return tags.landuse === "industrial";
 }
 
-export function isCommercial(tags: Tags) {
+function isCommercial(tags: Tags) {
   return tags.landuse === "commercial" || tags.landuse === "retail";
 }
 
-export function isResidential(tags: Tags) {
+function isResidential(tags: Tags) {
   return tags.landuse === "residential";
 }
 
-export function getNodeGroup(tags: Tags): GROUPS | null {
+function getNodeGroup(tags: Tags): GROUPS | null {
   return (isTree(tags) && GROUPS.Tree) || null;
 }
 
