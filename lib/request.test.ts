@@ -1,9 +1,21 @@
 import { test, expect } from "vitest";
-import { buildQuery, toFeatureCollection } from "./request";
+import { bboxZoom, buildQuery, toFeatureCollection } from "./request";
+import { ALL_HIGHWAY_VALUES, LINE_RULES } from "./tags";
 
-test("buildQuery", () => {
-  const query = buildQuery([-73.99, 40.73, -73.985, 40.735]);
-  expect(query).toContain("FROM postpass_linepolygon");
+test("bboxZoom", () => {
+  // A few Manhattan blocks
+  expect(bboxZoom([-73.99, 40.73, -73.985, 40.735])).toEqual(18);
+  // A metro region
+  expect(bboxZoom([-74.5, 40.2, -73.5, 41.2])).toEqual(10);
+  // A continent
+  expect(bboxZoom([-130, 20, -60, 55])).toEqual(4);
+  expect(bboxZoom([0, 0, 0, 0])).toEqual(22);
+});
+
+test("buildQuery at high zoom includes everything", () => {
+  const query = buildQuery([-73.99, 40.73, -73.985, 40.735], 18);
+  expect(query).toContain("FROM postpass_line");
+  expect(query).toContain("FROM postpass_polygon");
   expect(query).toContain("FROM postpass_point");
   expect(query).toContain(
     "ST_MakeEnvelope(-73.99, 40.73, -73.985, 40.735, 4326)",
@@ -11,7 +23,43 @@ test("buildQuery", () => {
   expect(query).toContain("tags ? 'building'");
   expect(query).toContain("tags ? 'railway'");
   expect(query).toContain("'motorway'");
-  expect(query).toContain("tags->>'natural' = 'tree'");
+  expect(query).toContain("'footway'");
+  expect(query).toContain("'tree'");
+  // No generalization at z14+
+  expect(query).not.toContain("ST_Area");
+});
+
+test("buildQuery at mid zoom excludes detail features", () => {
+  const query = buildQuery([-74.5, 40.2, -73.5, 41.2], 10);
+  expect(query).toContain("'motorway'");
+  expect(query).toContain("'secondary'");
+  expect(query).not.toContain("'tertiary'");
+  // Minor roads arrive at z12; landuse=residential polygons are allowed
+  expect(query).not.toContain("'living_street'");
+  expect(query).not.toContain("tags ? 'building'");
+  expect(query).not.toContain("FROM postpass_point");
+  // Railways are limited to main lines
+  expect(query).toContain("tags->>'railway' IN ('rail')");
+  // Small polygons are dropped
+  expect(query).toContain("ST_Area(geom) >");
+});
+
+test("buildQuery at low zoom keeps water and major roads only", () => {
+  const query = buildQuery([-130, 20, -60, 55], 4);
+  expect(query).toContain("tags->>'highway' IN ('motorway')");
+  expect(query).toContain("'coastline'");
+  expect(query).toContain("'water'");
+  expect(query).not.toContain("'trunk'");
+  expect(query).not.toContain("'wood'");
+});
+
+test("highway zoom tiers cover every rendered highway value", () => {
+  const tiered = new Set(
+    LINE_RULES.filter((rule) => rule.key === "highway").flatMap(
+      (rule) => rule.values || [],
+    ),
+  );
+  expect(tiered).toEqual(ALL_HIGHWAY_VALUES);
 });
 
 test("toFeatureCollection flattens tags and adds an id", () => {

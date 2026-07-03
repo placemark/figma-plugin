@@ -68,35 +68,89 @@ const parking = new Set(["multi-storey", "sheds", "carports", "garage_boxes"]);
 const landuseWater = new Set(["pond", "basin", "reservoir", "salt_pond"]);
 const naturalWater = new Set(["water", "coastline", "bay"]);
 
-const highwaysQuery = new Set([
+export type TagRule = {
+  key: string;
+  /** Include features with this tag at this zoom level and higher. */
+  minzoom: number;
+  /** Tag values to match. When omitted, any value matches. */
+  values?: string[];
+};
+
+/**
+ * Zoom-dependent feature inclusion, mimicking the OpenMapTiles schema
+ * that OpenFreeMap styles render: each road class, landuse, etc. only
+ * appears at the zoom level where those maps would draw it, so
+ * zoomed-out requests stay small.
+ * https://openmaptiles.org/schema/
+ */
+export const LINE_RULES: TagRule[] = [
+  { key: "highway", minzoom: 4, values: ["motorway"] },
+  { key: "highway", minzoom: 5, values: ["trunk"] },
+  { key: "highway", minzoom: 7, values: ["primary"] },
+  { key: "highway", minzoom: 9, values: ["secondary"] },
+  { key: "highway", minzoom: 11, values: ["tertiary"] },
+  {
+    key: "highway",
+    minzoom: 12,
+    values: [
+      "motorway_link",
+      "trunk_link",
+      "primary_link",
+      "secondary_link",
+      "tertiary_link",
+      "residential",
+      "unclassified",
+      "living_street",
+      "busway",
+    ],
+  },
+  { key: "highway", minzoom: 13, values: Array.from(service_roads) },
+  { key: "highway", minzoom: 14, values: Array.from(paths) },
+  { key: "railway", minzoom: 8, values: ["rail"] },
+  { key: "railway", minzoom: 13 },
+  { key: "natural", minzoom: 0, values: ["coastline"] },
+];
+
+export const POLYGON_RULES: TagRule[] = [
+  { key: "natural", minzoom: 0, values: ["water", "bay"] },
+  { key: "landuse", minzoom: 0, values: Array.from(landuseWater) },
+  { key: "leisure", minzoom: 6, values: ["nature_reserve"] },
+  { key: "landuse", minzoom: 6, values: ["residential"] },
+  { key: "natural", minzoom: 8, values: ["wood"] },
+  { key: "landuse", minzoom: 8, values: ["forest"] },
+  {
+    key: "landuse",
+    minzoom: 9,
+    values: [...landuse, "industrial", "commercial", "retail", "railway"],
+  },
+  {
+    key: "leisure",
+    minzoom: 9,
+    values: Array.from(leisure).filter((value) => value !== "nature_reserve"),
+  },
+  { key: "amenity", minzoom: 9, values: Array.from(educational) },
+  { key: "building", minzoom: 13 },
+  { key: "parking", minzoom: 13, values: Array.from(parking) },
+  // Pedestrian plazas and the like, mapped as areas
+  { key: "highway", minzoom: 13, values: Array.from(service_roads) },
+  { key: "highway", minzoom: 14, values: Array.from(paths) },
+];
+
+export const POINT_RULES: TagRule[] = [
+  { key: "natural", minzoom: 16, values: ["tree"] },
+];
+
+/**
+ * Every highway value the grouping code understands: the zoom tiers
+ * above should cover exactly this set.
+ */
+export const ALL_HIGHWAY_VALUES = new Set([
   ...supermajor_traffic_roads,
   ...major_traffic_roads,
   ...traffic_roads,
   ...service_roads,
   ...paths,
 ]);
-
-const naturalQuery = new Set([...naturalWater, "tree", "wood"]);
-
-const landuseQuery = new Set([
-  ...landuseWater,
-  ...landuse,
-  "industrial",
-  "commercial",
-  "retail",
-  "residential",
-  "forest",
-  "railway",
-]);
-
-export const TAGS_FOR_QUERY = {
-  amenity: Array.from(educational),
-  parking: Array.from(parking),
-  leisure: Array.from(leisure),
-  landuse: Array.from(landuseQuery),
-  highway: Array.from(highwaysQuery),
-  natural: Array.from(naturalQuery),
-};
 
 function isBuilding(tags: Tags) {
   return (
